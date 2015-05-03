@@ -71,9 +71,10 @@ cloudi_service_init(_Args, _Prefix, _Timeout, Dispatcher) ->
 	cloudi_service:subscribe(Dispatcher, "recommendedbooks/get"),
 	cloudi_service:subscribe(Dispatcher, "allbooks/get"),
 	cloudi_service:subscribe(Dispatcher, "download/get"),
-	cloudi_service:subscribe(Dispatcher, "rate/get"),
 	cloudi_service:subscribe(Dispatcher, "newuser/get"),
 	cloudi_service:subscribe(Dispatcher, "unrated/get"),
+	cloudi_service:subscribe(Dispatcher, "rate/get"),
+	cloudi_service:subscribe(Dispatcher, "/post"),
 
     	{ok, #state{}}.
 
@@ -115,6 +116,22 @@ cloudi_service_handle_request(Type, Name, Pattern, _RequestInfo, Request,
 			
 			[Item_id, User_id] = Request_tokens,
 			ReplyRecord = add_user_item(User_id, Item_id, Dispatcher);
+
+		"/recommend/book/newuser/get" ->
+			ReplyRecord = add_user(Dispatcher);
+
+		"/recommend/book/unrated/get" ->
+			List = binary_to_list(Request),
+			Request_tokens = string:tokens(List, "="),
+			?LOG_DEBUG("Request_tokens=~p", [Request_tokens]),
+
+			case Request_tokens of 
+				["user", User_id] ->
+					ReplyRecord = find_unrated_items(User_id, Dispatcher);
+				_ ->
+					ReplyRecord = cloudi_x_jsx:encode(["Could not match request"])
+			end;
+
 		"/recommend/book/rate/get" ->
 			% parse the item id, user id, and rating
 			List = binary_to_list(Request),
@@ -134,8 +151,7 @@ cloudi_service_handle_request(Type, Name, Pattern, _RequestInfo, Request,
 			{Rating_as_integer, _} = string:to_integer(Rating),	
 
 			ReplyRecord = add_rating(Item_id, User_id, Rating_as_integer, Dispatcher);
-			
-		"/recommend/book/post" ->
+		"/recommend/book//post" ->
 			List = binary_to_list(Request),
 			Request_tokens = string:tokens(List, "="),
 			?LOG_DEBUG("Request_tokens=~p", [Request_tokens]),
@@ -147,22 +163,7 @@ cloudi_service_handle_request(Type, Name, Pattern, _RequestInfo, Request,
 					ReplyRecord = cloudi_x_jsx:encode(["Could not match request"])
 			end;
 
-		"/recommend/book/newuser/get" ->
-			ReplyRecord = add_user(Dispatcher);
-
-		"/recommend/book/unrated/get" ->
-			List = binary_to_list(Request),
-			Request_tokens = string:tokens(List, "="),
-			?LOG_DEBUG("Request_tokens=~p", [Request_tokens]),
-
-			case Request_tokens of 
-				["user", User_id] ->
-					ReplyRecord = find_unrated_items(User_id, Dispatcher);
-				_ ->
-					ReplyRecord = cloudi_x_jsx:encode(["Could not match request"])
-			end;
-
-
+			
 %		"/recommend/book/utility/totaldownloads/get" ->
 %			Answer = get_total_downloads(Dispatcher),
 %			ReplyRecord = list_to_binary(integer_to_list(Answer));
