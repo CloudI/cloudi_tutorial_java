@@ -16,8 +16,7 @@ BUILD
 RUN
 ---
 
-1. To execute the tutorial dynamically, it is necessary to create the CloudI service configuration that specifies both the initialization and fault-tolerance constraints the CloudI service should be executed with (with the proplist format to rely on defaults): 
-
+To execute the tutorial dynamically, it is necessary to create the CloudI service configuration that specifies both the initialization and fault-tolerance constraints the CloudI service should be executed with (with the proplist format to rely on defaults): 
 
     export JAVA=`which java`
     export PWD=`pwd`
@@ -30,7 +29,7 @@ RUN
     EOF
 
 
-2. To dynamically add the CloudI service configuration that starts the service's execution use:
+To dynamically add the CloudI service configuration that starts the service's execution use:
 
     curl -X POST -d @tutorial.conf http://localhost:6464/cloudi/api/rpc/services_add.erl
 
