@@ -66,12 +66,10 @@ public class GutenbergRefreshParse extends DefaultHandler
             this.item_downloads = null;
             this.item_subject = null;
             
-            String temp = attributes.getValue("rdf:about");          
-            int pos = temp.indexOf("ebooks");
-            if (pos != -1)
+            String about = attributes.getValue("rdf:about");          
+            if (about.indexOf("ebooks/") == 0)
             {
-                pos += "ebooks".length() + 1;
-                this.item_id = temp.substring(pos);
+                this.item_id = about.substring("ebooks/".length());
                 this.is_ebook_flag = true;
             }
         }

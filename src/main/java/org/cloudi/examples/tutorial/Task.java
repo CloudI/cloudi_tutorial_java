@@ -90,9 +90,20 @@ public class Task implements Runnable
             this.refresh_pending.isDone() == false) {
             return ("pending".getBytes());
         }
+        final String D = System.getProperty("file.separator");
+        final String executable_path = System.getProperty("user.dir") + D +
+                                       "scripts" + D;
+        final String executable_download = executable_path +
+                                           "gutenberg_refresh_download";
+        final String executable_cleanup = executable_path +
+                                          "gutenberg_refresh_cleanup";
+        final String directory = System.getProperty("java.io.tmpdir") + D +
+                                 (new API.TransId(trans_id)).toString();
         // refresh may take a long time and can be done asynchronously
         this.refresh_pending = this.refresh_executor.submit(
-            new GutenbergRefresh("/opt/book/data/cache"));
+            new GutenbergRefresh(executable_download,
+                                 executable_cleanup,
+                                 directory));
 
         Main.info(this, "refresh end");
         return ("ok".getBytes());

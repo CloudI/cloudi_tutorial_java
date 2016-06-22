@@ -1,0 +1,14 @@
+#/bin/sh
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 directory"
+    exit 1
+fi
+
+DIRECTORY=$1
+mkdir -p $DIRECTORY
+cd $DIRECTORY
+curl -O http://www.gutenberg.org/cache/epub/feeds/rdf-files.tar.bz2
+bunzip2 rdf-files.tar.bz2
+tar xf rdf-files.tar
+
