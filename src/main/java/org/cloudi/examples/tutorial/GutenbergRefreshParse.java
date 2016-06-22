@@ -177,7 +177,7 @@ public class GutenbergRefreshParse extends DefaultHandler
                 this.is_subject_flag = false;
             }
         }
-        this.contents = null;
+        this.contents = new StringBuffer();
     }
 
     public void characters(char[] ch, int start, int length)

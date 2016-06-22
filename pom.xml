@@ -70,7 +70,7 @@
   <!-- For testing unrelease Java CloudI API changes,
        use a local installation of the cloudi_api_java dependency:
        
-       mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file -Dfile=./src/main/resources/cloudi_api_java-1.5.2-SNAPSHOT.jar -DgroupId=org.cloudi -DartifactId=cloudi_api_java -Dversion=1.5.2-SNAPSHOT -Dpackaging=jar -DlocalRepositoryPath=lib
+       mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file -Dfile=./cloudi_api_java-1.5.2-SNAPSHOT.jar -DgroupId=org.cloudi -DartifactId=cloudi_api_java -Dversion=1.5.2-SNAPSHOT -Dpackaging=jar -DlocalRepositoryPath=lib
 
     -->
   <repositories>
