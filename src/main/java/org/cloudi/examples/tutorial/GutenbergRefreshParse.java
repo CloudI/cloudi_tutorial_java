@@ -91,7 +91,7 @@ public class GutenbergRefreshParse extends DefaultHandler
             {
                 this.is_description_flag = true;
             }
-            else if ("dcterms:subject".equalsIgnoreCase(name))
+            else if ("pgterms:bookshelf".equalsIgnoreCase(name))
             {
                 this.is_subject_flag = true;
             }
@@ -134,11 +134,25 @@ public class GutenbergRefreshParse extends DefaultHandler
             {
                 if (this.is_language_flag == true)
                 {
-                    this.item_language = this.contents.toString();
+                    if (this.item_language == null)
+                    {
+                        this.item_language = this.contents.toString();
+                    }
+                    else
+                    {
+                        this.item_language += '|' + this.contents.toString();
+                    }
                 }
                 else if (this.is_subject_flag == true)
                 {
-                    this.item_subject = this.contents.toString();
+                    if (this.item_subject == null)
+                    {
+                        this.item_subject = this.contents.toString();
+                    }
+                    else
+                    {
+                        this.item_subject += '|' + this.contents.toString();
+                    }
                 }
             }
 
@@ -172,7 +186,7 @@ public class GutenbergRefreshParse extends DefaultHandler
             {
                 this.is_description_flag = false;
             }
-            else if ("dcterms:subject".equalsIgnoreCase(name))
+            else if ("pgterms:bookshelf".equalsIgnoreCase(name))
             {
                 this.is_subject_flag = false;
             }

@@ -36,11 +36,8 @@ public class GutenbergRefresh implements Runnable
         {
             if (this.download() != 0)
                 throw new IOException("download failed");
-            File[] files = new File(this.directory).listFiles();
-            if (files == null)
-                throw new IOException("directory invalid");
             SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
-            parseFiles(files, parser);
+            this.parseFiles(new File(this.directory), parser);
             if (this.cleanup() != 0)
                 throw new IOException("cleanup failed");
         }
@@ -90,20 +87,27 @@ public class GutenbergRefresh implements Runnable
         return result;
     }
     
-    private void parseFiles(File[] files, SAXParser parser)
-        throws org.xml.sax.SAXException,
-               java.io.IOException
+    private void parseFiles(final File directory, final SAXParser parser)
+        throws java.io.IOException
     {
-        if (files == null)
-            return;
-        for (File file : files)
+        for (final File file : directory.listFiles())
         {
             if (file.isDirectory())
             {
-                parseFiles(file.listFiles(), parser);
-                return;
+                this.parseFiles(file, parser);
             }
-            parser.parse(file, new GutenbergRefreshParse(this));
+            else
+            {
+                try
+                {
+                    parser.parse(file, new GutenbergRefreshParse(this));
+                }
+                catch (Exception e)
+                {
+                    Main.error(this, "parse %s failed\n", file.toString());
+                    e.printStackTrace(Main.err);
+                }
+            }
         }
     }
 
@@ -116,7 +120,7 @@ public class GutenbergRefresh implements Runnable
                      final String item_downloads,
                      final String item_subject)
     {
-        Main.info(this, "item(%s,%s,%s,%s,%s,%s,%s,%s)",
+        Main.info(this, "item(%s,%s,%s,%s,%s,%s,%s,%s)\n",
                   item_id, item_web_page, item_creator,
                   item_title, item_date_created, item_language,
                   item_downloads, item_subject);
