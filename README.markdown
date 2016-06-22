@@ -25,6 +25,7 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
       {file_path, "$JAVA"},
       {args, "-cp /usr/local/lib/cloudi-1.5.1/api/java/ "
              "-ea:org.cloudi... "
+             "-Duser.dir=$PWD "
              "-jar $PWD/target/cloudi_tutorial_java-1.5.1-SNAPSHOT-jar-with-dependencies.jar"}]]
     EOF
 
@@ -32,5 +33,10 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
 To dynamically add the CloudI service configuration that starts the service's execution use:
 
     curl -X POST -d @tutorial.conf http://localhost:6464/cloudi/api/rpc/services_add.erl
+
+
+Refresh the database:
+
+    curl http://localhost:6464/tutorial/refresh
 
 
