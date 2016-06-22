@@ -20,13 +20,15 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
 
     export JAVA=`which java`
     export PWD=`pwd`
+    export USER=`whoami`
     cat << EOF > tutorial.conf
     [[{prefix, "/tutorial/"},
       {file_path, "$JAVA"},
       {args, "-cp /usr/local/lib/cloudi-1.5.1/api/java/ "
              "-ea:org.cloudi... "
              "-Duser.dir=$PWD "
-             "-jar $PWD/target/cloudi_tutorial_java-1.5.1-SNAPSHOT-jar-with-dependencies.jar"}]]
+             "-jar $PWD/target/cloudi_tutorial_java-1.5.1-SNAPSHOT-jar-with-dependencies.jar"},
+      {options, [{owner, [{user, "$USER"}]}]}]]
     EOF
 
 

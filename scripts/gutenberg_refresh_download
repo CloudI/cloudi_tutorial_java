@@ -11,4 +11,5 @@ cd $DIRECTORY
 curl -O http://www.gutenberg.org/cache/epub/feeds/rdf-files.tar.bz2
 bunzip2 rdf-files.tar.bz2
 tar xf rdf-files.tar
+rm -f rdf-files.tar
 
