@@ -14,12 +14,30 @@ public class Arguments
     private int pgsql_port = 5432;
 
     @Parameter(names = "-pgsql_database", description = "PostgreSQL database")
-    private String pgsql_database = "cloudi_tutorial";
+    private String pgsql_database = "cloudi_tutorial_java";
 
     @Parameter(names = "-pgsql_username", description = "PostgreSQL username")
-    private String pgsql_username = "cloudi_tutorial";
+    private String pgsql_username = "cloudi_tutorial_java";
 
     @Parameter(names = "-pgsql_password", description = "PostgreSQL password")
-    private String pgsql_password = "cloudi_tutorial";
+    private String pgsql_password = "cloudi_tutorial_java";
+
+    public String getPGSQLURL()
+    {
+        return "jdbc:postgresql://" +
+               this.pgsql_hostname + ":" +
+               this.pgsql_port + "/" +
+               this.pgsql_database;
+    }
+
+    public String getPGSQLUsername()
+    {
+        return this.pgsql_username;
+    }
+
+    public String getPGSQLPassword()
+    {
+        return this.pgsql_password;
+    }
 }
 

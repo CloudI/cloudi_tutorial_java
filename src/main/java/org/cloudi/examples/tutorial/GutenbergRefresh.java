@@ -11,20 +11,24 @@ import java.lang.Process;
 import java.lang.Runtime;
 import java.lang.Thread;
 import java.lang.InterruptedException;
-import org.xml.sax.SAXException;
+import java.sql.Connection;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import org.xml.sax.SAXException;
 
 public class GutenbergRefresh implements Runnable
 {
+    private final Connection db;
     private final String executable_download;
     private final String executable_cleanup;
     private final String directory;
 
-    public GutenbergRefresh(String executable_download,
+    public GutenbergRefresh(Connection db,
+                            String executable_download,
                             String executable_cleanup,
                             String directory)
     {
+        this.db = db;
         this.executable_download = executable_download;
         this.executable_cleanup = executable_cleanup;
         this.directory = directory;

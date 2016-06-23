@@ -5,6 +5,7 @@ package org.cloudi.examples.tutorial;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.sql.Connection;
 import com.ericsson.otp.erlang.OtpErlangPid;
 import org.cloudi.API;
 
@@ -106,9 +107,15 @@ public class Task implements Runnable
                                           "gutenberg_refresh_cleanup";
         final String directory = System.getProperty("java.io.tmpdir") + D +
                                  (new API.TransId(trans_id)).toString();
+        final Connection db = Database.pgsql(this.arguments);
+        if (db == null)
+        {
+            return ("error".getBytes());
+        }
         // refresh may take a long time and can be done asynchronously
         this.refresh_pending = this.refresh_executor.submit(
-            new GutenbergRefresh(executable_download,
+            new GutenbergRefresh(db,
+                                 executable_download,
                                  executable_cleanup,
                                  directory));
 
