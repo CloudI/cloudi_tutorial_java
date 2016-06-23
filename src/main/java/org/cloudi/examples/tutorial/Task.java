@@ -10,14 +10,17 @@ import org.cloudi.API;
 
 public class Task implements Runnable
 {
+    private Arguments arguments;
     private API api;
     private ExecutorService refresh_executor;
     private Future<?> refresh_pending;
 
-    public Task(final int thread_index)
+    public Task(final Arguments arguments,
+                final int thread_index)
     {
         try
         {
+            this.arguments = arguments;
             this.api = new API(thread_index);
             this.refresh_executor = Executors.newSingleThreadExecutor();
             this.refresh_pending = null;
@@ -48,8 +51,12 @@ public class Task implements Runnable
             // based on the service configuration value
 
             // subscribe to different CloudI service name patterns
-            this.api.subscribe("refresh/get", this,
-                               "refresh");
+            if (this.api.process_index() == 0)
+            {
+                // only a single thread should handle refresh
+                this.api.subscribe("refresh/get", this,
+                                   "refresh");
+            }
 /*
             this.api.subscribe("generate_ratings/get", this,
                                "startGenerateRatings");

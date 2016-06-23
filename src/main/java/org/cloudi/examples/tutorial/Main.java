@@ -6,12 +6,37 @@ package org.cloudi.examples.tutorial;
 import java.io.PrintStream;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import com.beust.jcommander.JCommander;
 import org.cloudi.API;
 
 public class Main
 {
     public static final PrintStream out = API.out;
     public static final PrintStream err = API.err;
+
+    public static void main(String[] args_in)
+    {
+        try
+        {
+            Arguments args_out = new Arguments();
+            new JCommander(args_out, args_in);
+
+            final int thread_count = API.thread_count();
+            ExecutorService threads =
+                Executors.newFixedThreadPool(thread_count);
+            for (int thread_index = 0;
+                 thread_index < thread_count;
+                 ++thread_index)
+            {
+                threads.execute(new Task(args_out, thread_index));
+            }
+            threads.shutdown();
+        }
+        catch (API.InvalidInputException e)
+        {
+            e.printStackTrace(Main.err);
+        }
+    }
 
     public static void info(final Object instance,
                             final String message)
@@ -54,25 +79,5 @@ public class Main
         destination.format(instance.getClass().getName() + " " + format, args);
     }
 
-    public static void main(String[] args)
-    {
-        try
-        {
-            final int thread_count = API.thread_count();
-            ExecutorService threads =
-                Executors.newFixedThreadPool(thread_count);
-            for (int thread_index = 0;
-                 thread_index < thread_count;
-                 ++thread_index)
-            {
-                threads.execute(new Task(thread_index));
-            }
-            threads.shutdown();
-        }
-        catch (API.InvalidInputException e)
-        {
-            e.printStackTrace(Main.err);
-        }
-    }
 }
 
