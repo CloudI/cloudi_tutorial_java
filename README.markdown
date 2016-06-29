@@ -25,14 +25,15 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
     [[{prefix, "/tutorial/"},
       {file_path, "$JAVA"},
       {args, "-ea:org.cloudi... "
-             "-Duser.dir=$PWD "
              "-jar $PWD/target/cloudi_tutorial_java-1.5.1-SNAPSHOT-jar-with-dependencies.jar "
              "-pgsql_hostname localhost "
              "-pgsql_port 5432 "
              "-pgsql_database cloudi_tutorial_java "
              "-pgsql_username cloudi_tutorial_java "
              "-pgsql_password cloudi_tutorial_java"},
-      {options, [{owner, [{user, "$USER"}]}]}]]
+      {options,
+       [{owner, [{user, "$USER"}]},
+        {directory, "$PWD"}]}]]
     EOF
 
 
