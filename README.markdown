@@ -37,6 +37,15 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
     EOF
 
 
+Confirm your PostgreSQL database is setup with values that match the service configuration:
+
+    psql -U postgres << EOF
+    CREATE DATABASE cloudi_tutorial_java;"
+    CREATE USER cloudi_tutorial_java WITH PASSWORD 'cloudi_tutorial_java';
+    GRANT ALL PRIVILEGES ON DATABASE cloudi_tutorial_java to cloudi_tutorial_java;"
+    EOF
+
+
 To dynamically add the CloudI service configuration that starts the service's execution use:
 
     curl -X POST -d @tutorial.conf http://localhost:6464/cloudi/api/rpc/services_add.erl
