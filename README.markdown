@@ -40,9 +40,9 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
 Confirm your PostgreSQL database is setup with values that match the service configuration:
 
     psql -U postgres << EOF
-    CREATE DATABASE cloudi_tutorial_java;"
+    CREATE DATABASE cloudi_tutorial_java;
     CREATE USER cloudi_tutorial_java WITH PASSWORD 'cloudi_tutorial_java';
-    GRANT ALL PRIVILEGES ON DATABASE cloudi_tutorial_java to cloudi_tutorial_java;"
+    GRANT ALL PRIVILEGES ON DATABASE cloudi_tutorial_java to cloudi_tutorial_java;
     EOF
 
 
