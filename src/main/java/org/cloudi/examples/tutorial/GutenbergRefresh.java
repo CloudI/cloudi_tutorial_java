@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.ArrayList;
 import java.lang.Process;
 import java.lang.Runtime;
@@ -120,14 +121,14 @@ public class GutenbergRefresh implements Runnable
                      final String item_creator,
                      final String item_title,
                      final String item_date_created,
-                     final String item_language,
+                     final List<String> item_language,
                      final String item_downloads,
-                     final String item_subject)
+                     final List<String> item_subject)
     {
         Main.info(this, "item(%s,%s,%s,%s,%s,%s,%s,%s)\n",
                   item_id, item_web_page, item_creator,
-                  item_title, item_date_created, item_language,
-                  item_downloads, item_subject);
+                  item_title, item_date_created, item_language.toString(),
+                  item_downloads, item_subject.toString());
     }
 }
 

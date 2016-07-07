@@ -2,6 +2,8 @@
 // ex: set ft=java fenc=utf-8 sts=4 ts=4 sw=4 et:
 package org.cloudi.examples.tutorial;
 
+import java.util.List;
+import java.util.ArrayList;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -19,9 +21,9 @@ public class GutenbergRefreshParse extends DefaultHandler
     private String item_creator;
     private String item_title;
     private String item_date_created;
-    private String item_language;
+    private List<String> item_language;
     private String item_downloads;
-    private String item_subject;
+    private List<String> item_subject;
     private StringBuffer contents;
 
     public GutenbergRefreshParse(GutenbergRefresh gutenberg_refresh)
@@ -38,9 +40,9 @@ public class GutenbergRefreshParse extends DefaultHandler
         this.item_creator = null;
         this.item_title = null;
         this.item_date_created = null;
-        this.item_language = null;
+        this.item_language = new ArrayList<String>();
         this.item_downloads = null;
-        this.item_subject = null;
+        this.item_subject = new ArrayList<String>();
         this.contents = new StringBuffer();
     }
 
@@ -134,25 +136,11 @@ public class GutenbergRefreshParse extends DefaultHandler
             {
                 if (this.is_language_flag == true)
                 {
-                    if (this.item_language == null)
-                    {
-                        this.item_language = this.contents.toString();
-                    }
-                    else
-                    {
-                        this.item_language += '|' + this.contents.toString();
-                    }
+                    this.item_language.add(this.contents.toString());
                 }
                 else if (this.is_subject_flag == true)
                 {
-                    if (this.item_subject == null)
-                    {
-                        this.item_subject = this.contents.toString();
-                    }
-                    else
-                    {
-                        this.item_subject += '|' + this.contents.toString();
-                    }
+                    this.item_subject.add(this.contents.toString());
                 }
             }
 
