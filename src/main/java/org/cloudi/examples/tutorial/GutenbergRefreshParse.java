@@ -40,9 +40,9 @@ public class GutenbergRefreshParse extends DefaultHandler
         this.item_creator = null;
         this.item_title = null;
         this.item_date_created = null;
-        this.item_language = new ArrayList<String>();
+        this.item_language = null;
         this.item_downloads = null;
-        this.item_subject = new ArrayList<String>();
+        this.item_subject = null;
         this.contents = new StringBuffer();
     }
 
@@ -59,19 +59,18 @@ public class GutenbergRefreshParse extends DefaultHandler
     {
         if ("pgterms:ebook".equalsIgnoreCase(name))
         {
-            this.item_id = null;
-            this.item_web_page = null;
-            this.item_creator = null;
-            this.item_title = null;
-            this.item_date_created = null;
-            this.item_language = null;
-            this.item_downloads = null;
-            this.item_subject = null;
-            
             String about = attributes.getValue("rdf:about");          
             if (about.indexOf("ebooks/") == 0)
             {
                 this.item_id = about.substring("ebooks/".length());
+                this.item_web_page = null;
+                this.item_creator = null;
+                this.item_title = null;
+                this.item_date_created = null;
+                this.item_language = new ArrayList<String>();
+                this.item_downloads = null;
+                this.item_subject = new ArrayList<String>();
+
                 this.is_ebook_flag = true;
             }
         }
@@ -147,15 +146,34 @@ public class GutenbergRefreshParse extends DefaultHandler
             // reset flags when ending tags are encountered
             if ("pgterms:ebook".equalsIgnoreCase(name))
             {
-                // save the item
-                gutenberg_refresh.save(this.item_id,
-                                       this.item_web_page,
-                                       this.item_creator,
-                                       this.item_title,
-                                       this.item_date_created,
-                                       this.item_language,
-                                       this.item_downloads,
-                                       this.item_subject);
+                if (this.item_title == null ||
+                    this.item_date_created == null ||
+                    this.item_language.isEmpty() ||
+                    this.item_downloads == null)
+                {
+                    Main.error(this, "gutenberg item_id %s is invalid: " +
+                               "(%s, %s, %s, %s, %s, %s, %s)",
+                               this.item_id,
+                               this.item_web_page,
+                               this.item_creator,
+                               this.item_title,
+                               this.item_date_created,
+                               this.item_language.toString(),
+                               this.item_downloads,
+                               this.item_subject.toString());
+                }
+                else
+                {
+                    // save the item
+                    gutenberg_refresh.save(this.item_id,
+                                           this.item_web_page,
+                                           this.item_creator,
+                                           this.item_title,
+                                           this.item_date_created,
+                                           this.item_language,
+                                           this.item_downloads,
+                                           this.item_subject);
+                }
                 this.is_ebook_flag = false;
             }
             else if ("pgterms:creator".equalsIgnoreCase(name))
