@@ -165,13 +165,15 @@ public class GutenbergRefreshParse extends DefaultHandler
                 else
                 {
                     // save the item
+                    final int item_downloads_int =
+                        Integer.parseInt(this.item_downloads);
                     gutenberg_refresh.save(this.item_id,
                                            this.item_web_page,
                                            this.item_creator,
                                            this.item_title,
                                            this.item_date_created,
                                            this.item_language,
-                                           this.item_downloads,
+                                           item_downloads_int,
                                            this.item_subject);
                 }
                 this.is_ebook_flag = false;

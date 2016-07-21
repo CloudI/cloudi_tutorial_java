@@ -46,6 +46,11 @@ Confirm your PostgreSQL database is setup with values that match the service con
     EOF
 
 
+Make sure the database schema is initialized:
+
+    psql -h localhost cloudi_tutorial_java cloudi_tutorial_java < schema.sql
+
+
 To dynamically add the CloudI service configuration that starts the service's execution use:
 
     curl -X POST -d @tutorial.conf http://localhost:6464/cloudi/api/rpc/services_add.erl

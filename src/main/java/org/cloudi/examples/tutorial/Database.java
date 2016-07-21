@@ -5,6 +5,10 @@ package org.cloudi.examples.tutorial;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.Array;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.List;
 
 public class Database
 {
@@ -25,6 +29,20 @@ public class Database
             e.printStackTrace(Main.err);
             return null;
         }
+    }
+
+    public static Array toArray(Connection c, List<String> list)
+        throws SQLException
+    {
+        String[] list_array = new String[list.size()];
+        list_array = list.toArray(list_array);
+        return c.createArrayOf("text", list_array);
+    }
+
+    public static Date toDate(String value)
+        throws IllegalArgumentException
+    {
+        return Date.valueOf(value);
     }
 }
 

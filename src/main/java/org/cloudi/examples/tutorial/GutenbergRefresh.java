@@ -13,6 +13,8 @@ import java.lang.Runtime;
 import java.lang.Thread;
 import java.lang.InterruptedException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.SAXException;
@@ -23,6 +25,7 @@ public class GutenbergRefresh implements Runnable
     private final String executable_download;
     private final String executable_cleanup;
     private final String directory;
+    private boolean cleared;
 
     public GutenbergRefresh(Connection db,
                             String executable_download,
@@ -33,6 +36,7 @@ public class GutenbergRefresh implements Runnable
         this.executable_download = executable_download;
         this.executable_cleanup = executable_cleanup;
         this.directory = directory;
+        this.cleared = false;
     }
 
     public void run()
@@ -45,6 +49,7 @@ public class GutenbergRefresh implements Runnable
             this.parseFiles(new File(this.directory), parser);
             if (this.cleanup() != 0)
                 throw new IOException("cleanup failed");
+            Main.info(this, "refreshed");
         }
         catch (Exception e)
         {
@@ -122,13 +127,45 @@ public class GutenbergRefresh implements Runnable
                      final String item_title,
                      final String item_date_created,
                      final List<String> item_language,
-                     final String item_downloads,
+                     final int item_downloads,
                      final List<String> item_subject)
     {
+        try
+        {
+            if (! this.cleared)
+            {
+                Statement delete = this.db.createStatement();
+                delete.execute("DELETE FROM books");
+                delete.close(); 
+                this.cleared = true;
+            }
+            PreparedStatement insert =
+                this.db.prepareStatement(
+                    "INSERT INTO books (id, creator, creator_link, title, "   +
+                                       "date_created, languages, subjects, "  +
+                                       "downloads) "                          +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            insert.setString(1, item_id);
+            insert.setString(2, item_creator);
+            insert.setString(3, item_web_page);
+            insert.setString(4, item_title);
+            insert.setDate(5, Database.toDate(item_date_created));
+            insert.setArray(6, Database.toArray(this.db, item_language));
+            insert.setArray(7, Database.toArray(this.db, item_subject));
+            insert.setInt(8, item_downloads);
+            insert.executeUpdate();
+            insert.close();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace(Main.err);
+        }
+        /*
         Main.info(this, "item(%s,%s,%s,%s,%s,%s,%s,%s)\n",
                   item_id, item_web_page, item_creator,
                   item_title, item_date_created, item_language.toString(),
                   item_downloads, item_subject.toString());
+                  */
     }
 }
 
