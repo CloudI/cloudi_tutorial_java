@@ -141,6 +141,7 @@ public class LenskitData
         config.bind(UserVectorNormalizer.class)
               .to(BaselineSubtractingUserVectorNormalizer.class);
 
+/*
         // rating predictor (not ItemScorer) will clamp the rating output
         // to be within [0.5 .. 5] with granularity 0.5
         // (the default is to not clamp)
@@ -158,7 +159,7 @@ public class LenskitData
         config.within(ItemSimilarity.class)
               .bind(VectorSimilarity.class)
               .to(CosineVectorSimilarity.class);       // default
-
+*/
         return config;
     }
 

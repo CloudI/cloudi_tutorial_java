@@ -8,7 +8,7 @@ public class JSON
 {
     private static Gson instance;
 
-    public static Gson object()
+    public synchronized static Gson object()
     {
         if (JSON.instance == null)
         {
