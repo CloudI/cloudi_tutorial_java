@@ -22,6 +22,10 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
     [[{prefix, "/tutorial/"},
       {file_path, "$JAVA"},
       {args, "-ea:org.cloudi... "
+             "-Dfile.encoding=UTF-8 -server "
+             "-Xms1024m -Xmx1024m "
+             "-XX:NewSize=256m -XX:MaxNewSize=256m "
+             "-XX:PermSize=256m -XX:MaxPermSize=256m "
              "-jar $PWD/target/cloudi_tutorial_java-1.5.1-SNAPSHOT-jar-with-dependencies.jar "
              "-pgsql_hostname localhost "
              "-pgsql_port 5432 "
