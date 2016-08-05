@@ -102,14 +102,14 @@
       <version>9.3-1104-jdbc4</version>
     </dependency>
     <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.5</version>
+    </dependency>
+    <dependency>
       <groupId>com.beust</groupId>
       <artifactId>jcommander</artifactId>
       <version>1.47</version>
-    </dependency>
-    <dependency>
-      <groupId>org.msgpack</groupId>
-      <artifactId>msgpack</artifactId>
-      <version>0.6.12</version>
     </dependency>
   </dependencies>
 </project>

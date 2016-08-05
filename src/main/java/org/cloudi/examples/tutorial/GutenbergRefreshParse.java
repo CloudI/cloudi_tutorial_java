@@ -151,8 +151,9 @@ public class GutenbergRefreshParse extends DefaultHandler
                     this.item_language.isEmpty() ||
                     this.item_downloads == null)
                 {
+                    /*
                     Main.error(this, "gutenberg item_id %s is invalid: " +
-                               "(%s, %s, %s, %s, %s, %s, %s)",
+                               "(%s, %s, %s, %s, %s, %s, %s)\n",
                                this.item_id,
                                this.item_web_page,
                                this.item_creator,
@@ -161,6 +162,7 @@ public class GutenbergRefreshParse extends DefaultHandler
                                this.item_language.toString(),
                                this.item_downloads,
                                this.item_subject.toString());
+                    */
                 }
                 else
                 {

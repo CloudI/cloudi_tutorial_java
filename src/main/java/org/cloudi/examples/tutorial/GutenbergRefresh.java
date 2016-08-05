@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.lang.Process;
 import java.lang.Runtime;
 import java.lang.Thread;
@@ -15,6 +16,7 @@ import java.lang.InterruptedException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.sql.SQLException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.SAXException;
@@ -25,7 +27,10 @@ public class GutenbergRefresh implements Runnable
     private final String executable_download;
     private final String executable_cleanup;
     private final String directory;
+    private HashSet<String> subjects;
+    private HashSet<String> languages;
     private boolean cleared;
+    private SQLException failure;
 
     public GutenbergRefresh(Connection db,
                             String executable_download,
@@ -36,7 +41,10 @@ public class GutenbergRefresh implements Runnable
         this.executable_download = executable_download;
         this.executable_cleanup = executable_cleanup;
         this.directory = directory;
+        this.subjects = new HashSet();
+        this.languages = new HashSet();
         this.cleared = false;
+        this.failure = null;
     }
 
     public void run()
@@ -46,7 +54,22 @@ public class GutenbergRefresh implements Runnable
             if (this.download() != 0)
                 throw new IOException("download failed");
             SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
-            this.parseFiles(new File(this.directory), parser);
+            try
+            {
+                this.parseFiles(new File(this.directory), parser);
+                this.saveMetaData();
+                this.db.commit();
+            }
+            catch (SQLException e)
+            {
+                Database.printSQLException(e, Main.err);
+                Database.rollback(this.db);
+            }
+            catch (Exception e)
+            {
+                Database.rollback(this.db);
+                throw e;
+            }
             if (this.cleanup() != 0)
                 throw new IOException("cleanup failed");
             Main.info(this, "refreshed");
@@ -55,27 +78,31 @@ public class GutenbergRefresh implements Runnable
         {
             e.printStackTrace(Main.err);
         }
+        finally
+        {
+            Database.close(this.db);
+        }
     }
 
     private int download()
-        throws java.io.IOException,
-               java.lang.InterruptedException
+        throws IOException,
+               InterruptedException
     {
         return this.execute(this.executable_download,
                             this.directory);
     }
 
     private int cleanup()
-        throws java.io.IOException,
-               java.lang.InterruptedException
+        throws IOException,
+               InterruptedException
     {
         return this.execute(this.executable_cleanup,
                             this.directory);
     }
 
     private int execute(final String... args)
-        throws java.io.IOException,
-               java.lang.InterruptedException
+        throws IOException,
+               InterruptedException
 
     {
         final ProcessBuilder pb =
@@ -98,7 +125,8 @@ public class GutenbergRefresh implements Runnable
     }
     
     private void parseFiles(final File directory, final SAXParser parser)
-        throws java.io.IOException
+        throws IOException,
+               SQLException
     {
         for (final File file : directory.listFiles())
         {
@@ -117,6 +145,10 @@ public class GutenbergRefresh implements Runnable
                     Main.error(this, "parse %s failed\n", file.toString());
                     e.printStackTrace(Main.err);
                 }
+                if (this.failure != null)
+                {
+                    throw this.failure;
+                }
             }
         }
     }
@@ -130,22 +162,24 @@ public class GutenbergRefresh implements Runnable
                      final int item_downloads,
                      final List<String> item_subject)
     {
+        if (this.failure != null)
+            return;
+        Statement delete = null;
+        PreparedStatement insert = null;
         try
         {
             if (! this.cleared)
             {
-                Statement delete = this.db.createStatement();
-                delete.execute("DELETE FROM books");
-                delete.close(); 
+                delete = this.db.createStatement();
+                delete.execute("DELETE FROM items");
                 this.cleared = true;
             }
-            PreparedStatement insert =
-                this.db.prepareStatement(
-                    "INSERT INTO books (id, creator, creator_link, title, "   +
-                                       "date_created, languages, subjects, "  +
-                                       "downloads) "                          +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            insert.setString(1, item_id);
+            insert = this.db.prepareStatement(
+                "INSERT INTO items (id, creator, creator_link, title, "   +
+                                   "date_created, languages, subjects, "  +
+                                   "downloads) "                          +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            insert.setLong(1, Long.parseLong(item_id));
             insert.setString(2, item_creator);
             insert.setString(3, item_web_page);
             insert.setString(4, item_title);
@@ -154,11 +188,18 @@ public class GutenbergRefresh implements Runnable
             insert.setArray(7, Database.toArray(this.db, item_subject));
             insert.setInt(8, item_downloads);
             insert.executeUpdate();
-            insert.close();
+            this.subjects.addAll(item_subject);
+            this.languages.addAll(item_language);
         }
-        catch (Exception e)
+        catch (SQLException e)
         {
-            e.printStackTrace(Main.err);
+            // abort parsing and rethrow the exception
+            this.failure = e;
+        }
+        finally
+        {
+            Database.close(delete);
+            Database.close(insert);
         }
         /*
         Main.info(this, "item(%s,%s,%s,%s,%s,%s,%s,%s)\n",
@@ -166,6 +207,84 @@ public class GutenbergRefresh implements Runnable
                   item_title, item_date_created, item_language.toString(),
                   item_downloads, item_subject.toString());
                   */
+    }
+
+    private void saveMetaData()
+        throws SQLException
+    {
+        if (this.failure != null)
+            throw new IllegalArgumentException("invalid state");
+
+        Statement deleteSubjects = null;
+        PreparedStatement insertSubject = null;
+        Statement deleteLanguages = null;
+        PreparedStatement insertLanguage = null;
+        try
+        {
+            deleteSubjects = this.db.createStatement();
+            deleteSubjects.execute("DELETE FROM subjects");
+            insertSubject = this.db.prepareStatement(
+                "INSERT INTO subjects (subject, language) " +
+                "VALUES (?, ?)");
+            for (String subject : this.subjects)
+            {
+                insertSubject.setString(1, subject);
+                insertSubject.setString(2, this.subjectLanguage(subject));
+                insertSubject.executeUpdate();
+            }
+    
+            deleteLanguages = this.db.createStatement();
+            deleteLanguages.execute("DELETE FROM languages");
+            insertLanguage = this.db.prepareStatement(
+                "INSERT INTO languages (language) " +
+                "VALUES (?)");
+            for (String language : this.languages)
+            {
+                insertLanguage.setString(1, language);
+                insertLanguage.executeUpdate();
+            }
+        }
+        catch (SQLException e)
+        {
+            this.failure = e;
+        }
+        finally
+        {
+            Database.close(deleteSubjects);
+            Database.close(insertSubject);
+            Database.close(deleteLanguages);
+            Database.close(insertLanguage);
+        }
+
+        if (this.failure != null)
+            throw this.failure;
+    }
+
+    private String subjectLanguage(final String subject)
+    {
+        final String defaultLanguage = "en";
+        try
+        {
+            final char subjectLanguage[] = {subject.charAt(0),
+                                            subject.charAt(1)};
+            if (! (Character.isLetter(subjectLanguage[0]) &&
+                   Character.isUpperCase(subjectLanguage[0])))
+                return defaultLanguage;
+            if (! (Character.isLetter(subjectLanguage[1]) &&
+                   Character.isUpperCase(subjectLanguage[1])))
+                return defaultLanguage;
+            if (! (subject.charAt(2) == ' '))
+                return defaultLanguage;
+            final String language = (new String(subjectLanguage)).toLowerCase();
+            if (this.languages.contains(language))
+                return language;
+            else
+                return defaultLanguage;
+        }
+        catch (IndexOutOfBoundsException e)
+        {
+            return defaultLanguage;
+        }
     }
 }
 

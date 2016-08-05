@@ -15,6 +15,7 @@ public class Task implements Runnable
     private API api;
     private ExecutorService refresh_executor;
     private Future<?> refresh_pending;
+    private LenskitData lenskit;
 
     public Task(final Arguments arguments,
                 final int thread_index)
@@ -25,6 +26,7 @@ public class Task implements Runnable
             this.api = new API(thread_index);
             this.refresh_executor = Executors.newSingleThreadExecutor();
             this.refresh_pending = null;
+            this.lenskit = null;
         }
         catch (API.InvalidInputException e)
         {
@@ -58,14 +60,8 @@ public class Task implements Runnable
                 this.api.subscribe("refresh/get", this,
                                    "refresh");
             }
-/*
-            this.api.subscribe("generate_ratings/get", this,
-                               "startGenerateRatings");
-            this.api.subscribe("load_predictions/get", this,
-                               "startLoadPredictions");
-            this.api.subscribe("generate_item_attributes/get", this,
-                               "startGenerateItemAttributes");
-*/
+            this.api.subscribe("rate/post", this,
+                               "rate");
 
             Main.info(this, "initialization end");
             Object result = this.api.poll(); // accept service requests
@@ -92,11 +88,11 @@ public class Task implements Runnable
                           Byte priority, byte[] trans_id,
                           OtpErlangPid pid)
     {
-        Main.info(this, "refresh begin");
-
+        // refresh all item data
         if (this.refresh_pending != null &&
-            this.refresh_pending.isDone() == false) {
-            return ("pending".getBytes());
+            this.refresh_pending.isDone() == false)
+        {
+            return JSONResponse.failure("pending").toString().getBytes();
         }
         final String D = System.getProperty("file.separator");
         final String executable_path = System.getProperty("user.dir") + D +
@@ -110,7 +106,7 @@ public class Task implements Runnable
         final Connection db = Database.pgsql(this.arguments);
         if (db == null)
         {
-            return ("error".getBytes());
+            return JSONResponse.failure("db").toString().getBytes();
         }
         // refresh may take a long time and can be done asynchronously
         this.refresh_pending = this.refresh_executor.submit(
@@ -119,62 +115,44 @@ public class Task implements Runnable
                                  executable_cleanup,
                                  directory));
 
-        Main.info(this, "refresh end");
-        return ("ok".getBytes());
+        return JSONResponse.success().toString().getBytes();
     }
 
-/*
-    public Object startGenerateRatings(Integer command, String name,
-                                       String pattern, byte[] request_info,
-                                       byte[] request, Integer timeout,
-                                       Byte priority, byte[] trans_id,
-                                       OtpErlangPid pid) {
+    public Object rate(Integer command, String name,
+                       String pattern, byte[] request_info,
+                       byte[] request, Integer timeout,
+                       Byte priority, byte[] trans_id,
+                       OtpErlangPid pid)
+    {
+        // rate a single user_id/item_id and
+        // generate a new list of recommendations
+        final JSONRateRequest requestObject =
+            JSONRateRequest.fromString(new String(request));
+        final Connection db = Database.pgsql(this.arguments);
+        if (db == null)
+        {
+            return JSONResponse.failure("db").toString().getBytes();
+        }
+        if (this.lenskit == null)
+        {
+            try
+            {
+                this.lenskit = new LenskitData(db);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace(Main.err);
+                Database.close(db);
+                return JSONResponse.failure("lenskit").toString().getBytes();
+            }
+        }
+        this.lenskit.rate(db,
+                          requestObject.getUserId(),
+                          requestObject.getItemId(),
+                          requestObject.getRating());
+        Database.close(db);
 
-        API.out.println("startGenerateRatings starts");
-
-        // create a new instance of the RecommendationData class
-        RecommendationData recommendationData = new RecommendationData();
-        recommendationData.setCloudIAPI(api);
-        recommendationData.generateItemRatings();
-        recommendationData.generateUserFile();
-
-        API.out.println("startGenerateRatings ends");
-        return ("startGenerateRatings ends".getBytes());
+        return JSONResponse.success().toString().getBytes();
     }
 
-    public Object startGenerateItemAttributes(Integer command, String name,
-                                              String pattern,
-                                              byte[] request_info,
-                                              byte[] request, Integer timeout,
-                                              Byte priority, byte[] trans_id,
-                                              OtpErlangPid pid) {
-
-
-        API.out.println("startGenerateItemAttributes starts");
-
-        // create a new instance of the RecommendationData class
-        RecommendationData recommendationData = new RecommendationData();
-        recommendationData.setCloudIAPI(api);
-        recommendationData.generateItemAttributes();
-
-
-        API.out.println("startGenerateItemAttributes ends");
-        return ("startGenerateItemAttributes ends".getBytes());
-    }
-
-    public Object startLoadPredictions(Integer command, String name,
-                                       String pattern, byte[] request_info,
-                                       byte[] request, Integer timeout,
-                                       Byte priority, byte[] trans_id,
-                                       OtpErlangPid pid) {
-
-        API.out.println("startLoadPredictions starts");
-
-        ItemPrediction itemPrediction = new ItemPrediction();
-        itemPrediction.load("/opt/book/data/item_predict.txt", api);
-
-        API.out.println("startLoadPredictions ends");
-        return ("startLoadPredictions ends".getBytes());
-    }
-*/
 }
