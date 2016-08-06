@@ -14,12 +14,19 @@ public class Main
     public static final PrintStream out = API.out;
     public static final PrintStream err = API.err;
 
+    private static Arguments arguments_parsed;
+    public static Arguments arguments()
+    {
+        return Main.arguments_parsed;
+    }
+
     public static void main(String[] args_in)
     {
         try
         {
             Arguments args_out = new Arguments();
             new JCommander(args_out, args_in);
+            Main.arguments_parsed = args_out;
 
             final int thread_count = API.thread_count();
             ExecutorService threads =
@@ -28,7 +35,7 @@ public class Main
                  thread_index < thread_count;
                  ++thread_index)
             {
-                threads.execute(new Task(args_out, thread_index));
+                threads.execute(new Task(thread_index));
             }
             threads.shutdown();
         }

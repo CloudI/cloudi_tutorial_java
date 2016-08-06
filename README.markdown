@@ -60,6 +60,6 @@ To dynamically add the CloudI service configuration that starts the service's ex
 
 Refresh the database:
 
-    curl http://localhost:6464/tutorial/refresh
+    curl http://localhost:6464/tutorial/items/refresh
 
 
