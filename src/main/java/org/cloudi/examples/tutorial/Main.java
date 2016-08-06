@@ -18,11 +18,6 @@ public class Main
     {
         try
         {
-            /*
-            System.getProperties()
-                  .setProperty("org.slf4j.simpleLogger.defaultLogLevel",
-                               "warn");
-            */
             Arguments args_out = new Arguments();
             new JCommander(args_out, args_in);
 

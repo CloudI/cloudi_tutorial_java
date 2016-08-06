@@ -45,6 +45,28 @@ public class Task implements Runnable
         }
     }
 
+    private void updateRatings()
+        throws Exception
+    {
+        Main.info(this, "update ratings");
+        final Connection db = Database.pgsql(this.arguments);
+        if (db == null)
+            throw new IllegalArgumentException("DB connection failed");
+        try
+        {
+            this.lenskit = new LenskitData(db);
+        }
+        catch (Exception e)
+        {
+            Database.close(db);
+            throw e;
+        }
+        finally
+        {
+            Database.close(db);
+        }
+    }
+
     public void run()
     {
         try
@@ -52,6 +74,7 @@ public class Task implements Runnable
             Main.info(this, "initialization begin");
             // initialization timeout is enforced
             // based on the service configuration value
+            this.updateRatings();
 
             // subscribe to different CloudI service name patterns
             if (this.api.process_index() == 0)
@@ -132,19 +155,6 @@ public class Task implements Runnable
         if (db == null)
         {
             return JSONResponse.failure("db").toString().getBytes();
-        }
-        if (this.lenskit == null)
-        {
-            try
-            {
-                this.lenskit = new LenskitData(db);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace(Main.err);
-                Database.close(db);
-                return JSONResponse.failure("lenskit").toString().getBytes();
-            }
         }
         this.lenskit.rate(db,
                           requestObject.getUserId(),

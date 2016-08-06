@@ -34,7 +34,7 @@ CREATE TABLE ratings (
     user_id BIGINT NOT NULL,             -- Java long
     item_id BIGINT NOT NULL,             -- Java long
     rating DOUBLE PRECISION NOT NULL,    -- Java double [0.5 .. 5.0]
-    timestamp BIGINT NOT NULL,           -- Java long (microseconds)
+    timestamp BIGINT NULL,               -- Java long (microseconds)
     PRIMARY KEY(user_id, item_id)
 );
 -- upsert as a stored procedure for the ratings table

@@ -21,17 +21,18 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
     cat << EOF > tutorial.conf
     [[{prefix, "/tutorial/"},
       {file_path, "$JAVA"},
-      {args, "-ea:org.cloudi... "
-             "-Dfile.encoding=UTF-8 -server "
-             "-Xms1024m -Xmx1024m "
-             "-XX:NewSize=256m -XX:MaxNewSize=256m "
-             "-XX:PermSize=256m -XX:MaxPermSize=256m "
+      {args, "-Dfile.encoding=UTF-8 "
+             "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn "
+             "-server "
+             "-ea:org.cloudi... "
+             "-Xms3g -Xmx3g "
              "-jar $PWD/target/cloudi_tutorial_java-1.5.1-SNAPSHOT-jar-with-dependencies.jar "
              "-pgsql_hostname localhost "
              "-pgsql_port 5432 "
              "-pgsql_database cloudi_tutorial_java "
              "-pgsql_username cloudi_tutorial_java "
              "-pgsql_password cloudi_tutorial_java"},
+      {timeout_init, 600000},
       {options,
        [{owner, [{user, "$USER"}]},
         {directory, "$PWD"}]}]]

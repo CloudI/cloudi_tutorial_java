@@ -67,7 +67,7 @@ public class LenskitData
         JDBCRatingDAO dao = LenskitData.ratingsDAO(db);
         LenskitConfiguration dataConfig = new LenskitConfiguration();
         dataConfig.addComponent(dao);
-        return engine.createRecommender(dataConfig);
+        return this.engine.createRecommender(dataConfig);
     }
 
     public void rate(Connection db,
@@ -86,20 +86,6 @@ public class LenskitData
             upsert.setDouble(3, rating);
             upsertResult = upsert.executeQuery();
             db.commit();
-    
-            // based on http://lenskit.org/documentation/basics/getting-started/
-            final LenskitRecommender session = this.recommenderSession(db);
-            final ItemRecommender items = session.getItemRecommender();
-            List<ScoredId> recommendations = items.recommend(user_id, 10);
-    
-            // XXX add response return value
-            Main.info(this, "user(%d)\n", user_id);
-            for (ScoredId recommendation : recommendations)
-            {
-                Main.info(this, "recommendation(%d, %f)\n",
-                          recommendation.getId(),
-                          recommendation.getScore());
-            }
         }
         catch (SQLException e)
         {
@@ -115,6 +101,27 @@ public class LenskitData
         {
             Database.close(upsertResult);
             Database.close(upsert);
+        }
+    
+        try
+        {
+            // based on http://lenskit.org/documentation/basics/getting-started/
+            final LenskitRecommender session = this.recommenderSession(db);
+            final ItemRecommender items = session.getItemRecommender();
+            List<ScoredId> recommendations = items.recommend(user_id, 10);
+    
+            // XXX add response return value
+            Main.info(this, "user(%d)\n", user_id);
+            for (ScoredId recommendation : recommendations)
+            {
+                Main.info(this, "recommendation(%d, %f)\n",
+                          recommendation.getId(),
+                          recommendation.getScore());
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace(Main.err);
         }
     }
 
@@ -141,7 +148,6 @@ public class LenskitData
         config.bind(UserVectorNormalizer.class)
               .to(BaselineSubtractingUserVectorNormalizer.class);
 
-/*
         // rating predictor (not ItemScorer) will clamp the rating output
         // to be within [0.5 .. 5] with granularity 0.5
         // (the default is to not clamp)
@@ -159,7 +165,6 @@ public class LenskitData
         config.within(ItemSimilarity.class)
               .bind(VectorSimilarity.class)
               .to(CosineVectorSimilarity.class);       // default
-*/
         return config;
     }
 
