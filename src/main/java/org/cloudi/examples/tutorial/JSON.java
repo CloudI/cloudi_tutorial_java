@@ -3,6 +3,7 @@
 package org.cloudi.examples.tutorial;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class JSON
 {
@@ -12,7 +13,12 @@ public class JSON
     {
         if (JSON.instance == null)
         {
-            JSON.instance = new Gson();
+            JSON.instance = new GsonBuilder()
+                .registerTypeAdapter(JSONRateRecommendation.class,
+                                     new JSONRateRecommendation
+                                         .JSONRateRecommendationSerializer())
+                .serializeNulls()
+                .create();
         }
         return JSON.instance;
     }

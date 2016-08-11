@@ -56,12 +56,12 @@ public class Database
     public static void printSQLException(SQLException ex, PrintStream err)
     { 
         // based on JDBCTutorialUtilities
-        final String sqlState = ex.getSQLState();
+        final String sql_state = ex.getSQLState();
         Throwable e = ex;
-        if (! Database.ignoreSQLException(sqlState))
+        if (! Database.ignoreSQLException(sql_state))
         {
             e.printStackTrace(err);
-            err.println("SQLState: " + sqlState);
+            err.println("SQLState: " + sql_state);
             err.println("Error Code: " + ex.getErrorCode());
             err.println("Message: " + e.getMessage());
 
@@ -74,19 +74,19 @@ public class Database
         }
     }
 
-    private static boolean ignoreSQLException(String sqlState)
+    private static boolean ignoreSQLException(String sql_state)
         throws IllegalArgumentException
     {
         // based on JDBCTutorialUtilities
-        if (sqlState == null)
+        if (sql_state == null)
             throw new IllegalArgumentException("SQL state was null");
 
         //// X0Y32: Jar file already exists in schema
-        //if (sqlState.equalsIgnoreCase("X0Y32"))
+        //if (sql_state.equalsIgnoreCase("X0Y32"))
         //    return true;
 
         //// 42Y55: Table already exists in schema
-        //if (sqlState.equalsIgnoreCase("42Y55"))
+        //if (sql_state.equalsIgnoreCase("42Y55"))
         //    return true;
 
         return false;

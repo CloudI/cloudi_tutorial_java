@@ -17,8 +17,8 @@ public class JSONResponse
         return new JSONResponse(false, error);
     }
 
-    private JSONResponse(final boolean success,
-                         final String error)
+    protected JSONResponse(final boolean success,
+                           final String error)
     {
         this.success = success;
         this.error = error;

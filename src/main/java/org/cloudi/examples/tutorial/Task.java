@@ -11,20 +11,20 @@ import org.cloudi.API;
 
 public class Task implements Runnable
 {
+    private final ExecutorService refresh_executor;
+    private Future<?> refresh_pending;
     private final int thread_index;
     private API api;
-    private ExecutorService refresh_executor;
-    private Future<?> refresh_pending;
     private static LenskitData lenskit_instance;
 
     public Task(final int thread_index)
     {
+        this.refresh_executor = Executors.newSingleThreadExecutor();
+        this.refresh_pending = null;
         this.thread_index = thread_index;
         try
         {
             this.api = new API(thread_index);
-            this.refresh_executor = Executors.newSingleThreadExecutor();
-            this.refresh_pending = null;
         }
         catch (API.InvalidInputException e)
         {
@@ -151,7 +151,6 @@ public class Task implements Runnable
                                  executable_download,
                                  executable_cleanup,
                                  directory));
-
         return JSONResponse.success().toString().getBytes();
     }
 
@@ -161,6 +160,8 @@ public class Task implements Runnable
                                         Byte priority, byte[] trans_id,
                                         OtpErlangPid pid)
     {
+        // update the model used to generate recommendations
+        // (new ratings won't be used until this occurs)
         if (Task.lenskit(true) == null)
         {
             return JSONResponse.failure("lenskit").toString().getBytes();
@@ -175,21 +176,28 @@ public class Task implements Runnable
                                        OtpErlangPid pid)
     {
         // rate a single user_id/item_id and
-        // generate a new list of recommendations
-        final JSONRateRequest requestObject =
+        // generate a new list of recommendations with rating predictions
+        final JSONRateRequest request_json =
             JSONRateRequest.fromString(new String(request));
+        if (request_json.getUserId() <= 0 ||
+            request_json.getItemId() <= 0 ||
+            request_json.getRating() < LenskitData.RATING_MIN ||
+            request_json.getRating() > LenskitData.RATING_MAX)
+        {
+            return JSONResponse.failure("json").toString().getBytes();
+        }
         final Connection db = Database.pgsql(Main.arguments());
         if (db == null)
         {
             return JSONResponse.failure("db").toString().getBytes();
         }
-        Task.lenskit().rate(db,
-                            requestObject.getUserId(),
-                            requestObject.getItemId(),
-                            requestObject.getRating());
+        final JSONResponse response = Task.lenskit()
+                                          .rate(db,
+                                                request_json.getUserId(),
+                                                request_json.getItemId(),
+                                                request_json.getRating());
         Database.close(db);
-
-        return JSONResponse.success().toString().getBytes();
+        return response.toString().getBytes();
     }
 
 }

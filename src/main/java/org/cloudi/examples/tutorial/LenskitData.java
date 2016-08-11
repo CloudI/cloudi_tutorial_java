@@ -4,12 +4,14 @@
 package org.cloudi.examples.tutorial;
 
 import java.util.List;
+import java.util.LinkedList;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.grouplens.lenskit.ItemScorer;
 import org.grouplens.lenskit.ItemRecommender;
+import org.grouplens.lenskit.RatingPredictor;
 import org.grouplens.lenskit.RecommenderBuildException;
 import org.grouplens.lenskit.core.LenskitConfiguration;
 import org.grouplens.lenskit.core.LenskitRecommender;
@@ -21,7 +23,6 @@ import org.grouplens.lenskit.data.sql.JDBCRatingDAOBuilder;
 import org.grouplens.lenskit.knn.MinNeighbors;
 import org.grouplens.lenskit.knn.NeighborhoodSize;
 import org.grouplens.lenskit.knn.item.ItemItemScorer;
-//import org.grouplens.lenskit.knn.item.MinCommonUsers;
 import org.grouplens.lenskit.knn.item.ModelSize;
 import org.grouplens.lenskit.knn.item.ItemSimilarity;
 import org.grouplens.lenskit.knn.item.ItemSimilarityThreshold;
@@ -39,9 +40,11 @@ import org.grouplens.lenskit.transform.threshold.ThresholdValue;
 import org.grouplens.lenskit.transform.normalize.UserVectorNormalizer;
 import org.grouplens.lenskit.transform.normalize.BaselineSubtractingUserVectorNormalizer;
 
-
 public class LenskitData
 {
+    public static final double RATING_MIN = 0.5;
+    public static final double RATING_MAX = 5.0;
+
     private final LenskitRecommenderEngine engine;
 
     public LenskitData(Connection db)
@@ -50,12 +53,12 @@ public class LenskitData
         // based on http://lenskit.org/documentation/basics/data-access/
         LenskitConfiguration config = LenskitData.configuration();
         JDBCRatingDAO dao = LenskitData.ratingsDAO(db);
-        LenskitConfiguration dataConfig = new LenskitConfiguration();
-        dataConfig.addComponent(dao);
+        LenskitConfiguration data_config = new LenskitConfiguration();
+        data_config.addComponent(dao);
         this.engine =
             LenskitRecommenderEngine.newBuilder()
                                     .addConfiguration(config)
-                                    .addConfiguration(dataConfig,
+                                    .addConfiguration(data_config,
                                                       ModelDisposition.EXCLUDED)
                                     .build();
     }
@@ -65,18 +68,18 @@ public class LenskitData
     {
         // based on http://lenskit.org/documentation/basics/data-access/
         JDBCRatingDAO dao = LenskitData.ratingsDAO(db);
-        LenskitConfiguration dataConfig = new LenskitConfiguration();
-        dataConfig.addComponent(dao);
-        return this.engine.createRecommender(dataConfig);
+        LenskitConfiguration data_config = new LenskitConfiguration();
+        data_config.addComponent(dao);
+        return this.engine.createRecommender(data_config);
     }
 
-    public void rate(Connection db,
-                     final long user_id,
-                     final long item_id,
-                     final double rating)
+    public JSONResponse rate(Connection db,
+                             final long user_id,
+                             final long item_id,
+                             final double rating)
     {
         PreparedStatement upsert = null;
-        ResultSet upsertResult = null;
+        ResultSet upsert_result = null;
         try
         {
             // update ratings table
@@ -84,7 +87,7 @@ public class LenskitData
             upsert.setLong(1, user_id);
             upsert.setLong(2, item_id);
             upsert.setDouble(3, rating);
-            upsertResult = upsert.executeQuery();
+            upsert_result = upsert.executeQuery();
             db.commit();
         }
         catch (SQLException e)
@@ -99,7 +102,7 @@ public class LenskitData
         }
         finally
         {
-            Database.close(upsertResult);
+            Database.close(upsert_result);
             Database.close(upsert);
         }
     
@@ -109,19 +112,24 @@ public class LenskitData
             final LenskitRecommender session = this.recommenderSession(db);
             final ItemRecommender items = session.getItemRecommender();
             List<ScoredId> recommendations = items.recommend(user_id, 10);
-    
-            // XXX add response return value
-            Main.info(this, "user(%d)\n", user_id);
+            RatingPredictor future_rating = session.getRatingPredictor();
+            LinkedList<JSONRateRecommendation> output =
+                new LinkedList<JSONRateRecommendation>();
+
             for (ScoredId recommendation : recommendations)
             {
-                Main.info(this, "recommendation(%d, %f)\n",
-                          recommendation.getId(),
-                          recommendation.getScore());
+                final long item_id_recommended = recommendation.getId();
+                final double rating_prediction =
+                    future_rating.predict(user_id, item_id_recommended);
+                output.addLast(new JSONRateRecommendation(item_id_recommended,
+                                                          rating_prediction));
             }
+            return JSONRateResponse.success(user_id, output);
         }
         catch (Exception e)
         {
             e.printStackTrace(Main.err);
+            return JSONRateResponse.failure("lenskit", user_id);
         }
     }
 
@@ -152,12 +160,14 @@ public class LenskitData
         // to be within [0.5 .. 5] with granularity 0.5
         // (the default is to not clamp)
         config.bind(PreferenceDomain.class)
-              .to(new PreferenceDomain(0.5, 5, 0.5));
+              .to(new PreferenceDomain(LenskitData.RATING_MIN,
+                                       LenskitData.RATING_MAX, 0.5));
         // explicit default configuration values
         config.set(NeighborhoodSize.class).to(20);     // default
         config.set(MinNeighbors.class).to(1);          // default
-        config.set(ModelSize.class).to(0);             // default
-        //config.set(MinCommonUsers.class).to(0);        // default
+        config.set(ModelSize.class) // value = 4000 commonly used
+              .to(0);                                  // default
+
         config.set(SimilarityDamping.class).to(0.0);   // default
         config.set(ThresholdValue.class).to(0.0);      // default
         //config.bind(ItemSimilarityThreshold.class)
