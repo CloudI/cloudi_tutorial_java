@@ -77,6 +77,20 @@ To dynamically add the CloudI service configuration that starts the service's ex
 
 Refresh the database:
 
-    curl -X POST -d '{}' http://localhost:8080/tutorial/java/service/items/refresh
+    curl -X POST -d '{}' http://localhost:8080/tutorial/java/service/item/refresh
 
+Get the current list of items with the user's current ratings:
 
+    curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/item/list
+
+Update the recommendations model:
+
+    curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/recommendation/refresh
+
+Get the current list of recommendations:
+
+    curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/recommendation/list
+
+Update an item's rating:
+
+    curl -X POST -d '{"user_id": 1, "item_id": 1, "rating": 5.0}' http://localhost:8080/tutorial/java/service/recommendation/update
