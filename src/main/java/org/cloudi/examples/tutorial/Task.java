@@ -139,6 +139,7 @@ public class Task implements Runnable
 
     private void subscribe(final String service_name_suffix,
                            final String method_name)
+        throws NoSuchMethodException
     {
         // plain HTTP request for manual testing with JSON data in POST request
         this.api.subscribe(service_name_suffix + "/post", this,
