@@ -90,7 +90,7 @@ Get the current list of items with the user's current ratings:
 
     curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/item/list
 
-Refresh the list of items with the books available at [http://www.gutenberg.org/](gutenberg.org):
+Refresh the list of items with the books available at [gutenberg.org](http://www.gutenberg.org/):
 
     curl -X POST -d '{}' http://localhost:8080/tutorial/java/service/item/refresh
 
