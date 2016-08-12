@@ -2,19 +2,16 @@
 // ex: set ft=java fenc=utf-8 sts=4 ts=4 sw=4 et:
 package org.cloudi.examples.tutorial;
 
-public class JSONRateRequest
+public class JSONRecommendationUpdateRequest
 {
     private long user_id;
     private long item_id;
     private double rating;
 
-    public static JSONRateRequest fromString(final String json)
+    public static JSONRecommendationUpdateRequest fromString(final String json)
     {
-        return JSON.object().fromJson(json, JSONRateRequest.class);
-    }
-
-    public JSONRateRequest()
-    {
+        return JSON.object()
+                   .fromJson(json, JSONRecommendationUpdateRequest.class);
     }
 
     public long getUserId()

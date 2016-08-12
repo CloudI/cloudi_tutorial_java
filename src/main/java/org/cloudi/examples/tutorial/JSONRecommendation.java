@@ -8,13 +8,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializer;
 import com.google.gson.JsonSerializationContext;
 
-public class JSONRateRecommendation
+public class JSONRecommendation
 {
     private final long item_id;
     private final double rating_expected;
 
-    public JSONRateRecommendation(final long item_id,
-                                  final double rating_expected)
+    public JSONRecommendation(final long item_id,
+                              final double rating_expected)
     {
         this.item_id = item_id;
         this.rating_expected = rating_expected;
@@ -30,11 +30,10 @@ public class JSONRateRecommendation
         return this.rating_expected;
     }
 
-    public static class JSONRateRecommendationSerializer
-        implements JsonSerializer<JSONRateRecommendation>
+    public static class Serializer implements JsonSerializer<JSONRecommendation>
     {
         @Override
-        public JsonElement serialize(JSONRateRecommendation src,
+        public JsonElement serialize(JSONRecommendation src,
                                      Type typeOfSrc,
                                      JsonSerializationContext context)
         {

@@ -13,14 +13,19 @@ public class JSON
     {
         if (JSON.instance == null)
         {
-            JSON.instance = new GsonBuilder()
-                .registerTypeAdapter(JSONRateRecommendation.class,
-                                     new JSONRateRecommendation
-                                         .JSONRateRecommendationSerializer())
-                .serializeNulls()
-                .create();
+            JSON.instance = JSON.configuration(new GsonBuilder());
         }
         return JSON.instance;
+    }
+
+    private static Gson configuration(final GsonBuilder builder)
+    {
+        return builder.registerTypeAdapter(JSONItem.class,
+                                           new JSONItem.Serializer())
+                      .registerTypeAdapter(JSONRecommendation.class,
+                                           new JSONRecommendation.Serializer())
+                      .serializeNulls()
+                      .create();
     }
 
 }
