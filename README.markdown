@@ -78,23 +78,23 @@ Browse the website at [http://localhost:8080/tutorial/java/](http://localhost:80
 SERVICE API EXAMPLES
 --------------------
 
-Refresh the database:
+Update an item's rating:
 
-    curl -X POST -d '{}' http://localhost:8080/tutorial/java/service/item/refresh
-
-Get the current list of items with the user's current ratings:
-
-    curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/item/list
-
-Update the recommendations model:
-
-    curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/recommendation/refresh
+    curl -X POST -d '{"user_id": 1, "item_id": 1, "rating": 5.0}' http://localhost:8080/tutorial/java/service/recommendation/update
 
 Get the current list of recommendations:
 
     curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/recommendation/list
 
-Update an item's rating:
+Get the current list of items with the user's current ratings:
 
-    curl -X POST -d '{"user_id": 1, "item_id": 1, "rating": 5.0}' http://localhost:8080/tutorial/java/service/recommendation/update
+    curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/item/list
+
+Refresh the list of items with the books available at [http://www.gutenberg.org/](gutenberg.org):
+
+    curl -X POST -d '{}' http://localhost:8080/tutorial/java/service/item/refresh
+
+Update the recommendations model:
+
+    curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/recommendation/refresh
 
