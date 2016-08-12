@@ -28,8 +28,7 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
      [{prefix, "/tutorial/java/client/"},
       {module, cloudi_service_http_cowboy},
       {args,
-       [{port, 8080}, {output, external}, {use_websockets, true},
-        {query_get_format, text_pairs}]},
+       [{port, 8080}, {use_websockets, true}]},
       {timeout_async, 600000},
       {timeout_sync, 600000}]]
     EOF
