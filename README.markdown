@@ -74,6 +74,10 @@ To dynamically add the CloudI service configuration that starts the service's ex
     curl -X POST -d @website.conf http://localhost:6464/cloudi/api/rpc/services_add.erl
     curl -X POST -d @tutorial.conf http://localhost:8080/cloudi/api/rpc/services_add.erl
 
+Browse the website at [http://localhost:8080/tutorial/java/](http://localhost:8080/tutorial/java/)
+
+SERVICE API EXAMPLES
+--------------------
 
 Refresh the database:
 
@@ -94,3 +98,4 @@ Get the current list of recommendations:
 Update an item's rating:
 
     curl -X POST -d '{"user_id": 1, "item_id": 1, "rating": 5.0}' http://localhost:8080/tutorial/java/service/recommendation/update
+

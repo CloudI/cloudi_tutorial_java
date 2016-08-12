@@ -2,7 +2,9 @@
 // ex: set ft=java fenc=utf-8 sts=4 ts=4 sw=4 et:
 package org.cloudi.examples.tutorial;
 
+import java.util.Arrays;
 import java.lang.reflect.Type;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializer;
@@ -17,8 +19,8 @@ public class JSONItem
     private final String date_created;
     private final String[] languages;
     private final String[] subjects;
-    private final int downloads;
-    private final double rating;
+    private final Integer downloads;
+    private final Double rating;
 
     public JSONItem(final long item_id,
                     final String creator,
@@ -27,8 +29,8 @@ public class JSONItem
                     final String date_created,
                     final String[] languages,
                     final String[] subjects,
-                    final int downloads,
-                    final double rating)
+                    final Integer downloads,
+                    final Double rating)
     {
         this.item_id = item_id;
         this.creator = creator;
@@ -46,7 +48,42 @@ public class JSONItem
         return this.item_id;
     }
 
-    public final double getRating()
+    public final String getCreator()
+    {
+        return this.creator;
+    }
+
+    public final String getCreatorLink()
+    {
+        return this.creator_link;
+    }
+
+    public final String getTitle()
+    {
+        return this.title;
+    }
+
+    public final String getDateCreated()
+    {
+        return this.date_created;
+    }
+
+    public final String[] getLanguages()
+    {
+        return this.languages;
+    }
+
+    public final String[] getSubjects()
+    {
+        return this.subjects;
+    }
+
+    public final Integer getDownloads()
+    {
+        return this.downloads;
+    }
+
+    public final Double getRating()
     {
         return this.rating;
     }
@@ -60,6 +97,15 @@ public class JSONItem
         {
             JsonObject object = new JsonObject();
             object.addProperty("item_id", src.getItemId());
+            object.addProperty("creator", src.getCreator());
+            object.addProperty("creator_link", src.getCreatorLink());
+            object.addProperty("title", src.getTitle());
+            object.addProperty("date_created", src.getDateCreated());
+            object.add("languages",
+                JSON.object().toJsonTree(src.getLanguages()));
+            object.add("subjects",
+                JSON.object().toJsonTree(src.getSubjects()));
+            object.addProperty("downloads", src.getDownloads());
             object.addProperty("rating", src.getRating());
             return object;
         }

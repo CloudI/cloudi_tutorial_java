@@ -116,10 +116,10 @@ public class LenskitData
                 final String[] subjects = (String[])
                     select_result.getArray("subjects")
                                  .getArray();
-                final int downloads =
-                    select_result.getInt("downloads");
-                final double rating =
-                    select_result.getDouble("rating");
+                final Integer downloads = (Integer)
+                    select_result.getObject("downloads");
+                final Double rating = (Double)
+                    select_result.getObject("rating");
                 output.addLast(new JSONItem(item_id,
                                             creator,
                                             creator_link,
