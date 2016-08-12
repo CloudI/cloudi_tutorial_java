@@ -18,8 +18,23 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
     export JAVA=`which java`
     export PWD=`pwd`
     export USER=`whoami`
+    cat << EOF > website.conf
+    [[{prefix, "/tutorial/java/"},
+      {module, cloudi_service_filesystem},
+      {args,
+       [{directory, "$PWD/html/"}]},
+      {dest_refresh, none},
+      {count_process, 4}],
+     [{prefix, "/tutorial/java/client/"},
+      {module, cloudi_service_http_cowboy},
+      {args,
+       [{port, 8080}, {output, external}, {use_websockets, true},
+        {query_get_format, text_pairs}]},
+      {timeout_async, 600000},
+      {timeout_sync, 600000}]]
+    EOF
     cat << EOF > tutorial.conf
-    [[{prefix, "/tutorial/"},
+    [[{prefix, "/tutorial/java/service/"},
       {file_path, "$JAVA"},
       {args, "-Dfile.encoding=UTF-8 "
              "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn "
@@ -33,6 +48,7 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
              "-pgsql_username cloudi_tutorial_java "
              "-pgsql_password cloudi_tutorial_java"},
       {timeout_init, 600000},
+      {count_thread, 4},
       {options,
        [{owner, [{user, "$USER"}]},
         {directory, "$PWD"}]}]]
@@ -55,11 +71,12 @@ Make sure the database schema is initialized:
 
 To dynamically add the CloudI service configuration that starts the service's execution use:
 
-    curl -X POST -d @tutorial.conf http://localhost:6464/cloudi/api/rpc/services_add.erl
+    curl -X POST -d @website.conf http://localhost:6464/cloudi/api/rpc/services_add.erl
+    curl -X POST -d @tutorial.conf http://localhost:8080/cloudi/api/rpc/services_add.erl
 
 
 Refresh the database:
 
-    curl http://localhost:6464/tutorial/items/refresh
+    curl -X POST -d '{}' http://localhost:8080/tutorial/java/service/items/refresh
 
 
