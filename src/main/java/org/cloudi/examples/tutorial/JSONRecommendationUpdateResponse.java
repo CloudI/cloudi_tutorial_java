@@ -7,7 +7,7 @@ import java.util.LinkedList;
 
 public class JSONRecommendationUpdateResponse extends JSONResponse
 {
-    private final long user_id;
+    private final Long user_id;
     private final List<JSONRecommendation> recommendations;
 
     public static JSONRecommendationUpdateResponse
@@ -28,9 +28,18 @@ public class JSONRecommendationUpdateResponse extends JSONResponse
                                                     user_id, empty);
     }
 
+    public static JSONRecommendationUpdateResponse
+        failure(final String error)
+    {
+        final List<JSONRecommendation> empty =
+            new LinkedList<JSONRecommendation>();
+        return new JSONRecommendationUpdateResponse(false, error,
+                                                    null, empty);
+    }
+
     private JSONRecommendationUpdateResponse(final boolean success,
                                              final String error,
-                                             final long user_id,
+                                             final Long user_id,
                                              final List<JSONRecommendation>
                                                  recommendations)
     {

@@ -17,8 +17,7 @@ public class JSONRecommendationUpdateRequest extends JSONRequest
 
     public boolean valid()
     {
-        return this.getMessageName() ==
-               JSONRecommendationUpdateRequest.message_name_valid &&
+        return this.getMessageName().equals(this.message_name_valid) &&
                this.user_id > 0 &&
                this.item_id > 0 &&
                this.rating >= LenskitData.RATING_MIN &&

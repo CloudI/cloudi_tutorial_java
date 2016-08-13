@@ -13,8 +13,7 @@ public class JSONLanguageListRequest extends JSONRequest
 
     public boolean valid()
     {
-        return this.getMessageName() ==
-               JSONLanguageListRequest.message_name_valid;
+        return this.getMessageName().equals(this.message_name_valid);
     }
 
 }

@@ -209,8 +209,7 @@ public class Service implements Runnable
         if (request_json == null)
         {
             return JSONItemListResponse
-                .failure("json",
-                         request_json.getUserId())
+                .failure("json")
                 .toString().getBytes();
         }
         final Connection db = Database.pgsql(Main.arguments());
@@ -311,8 +310,7 @@ public class Service implements Runnable
         if (request_json == null)
         {
             return JSONRecommendationUpdateResponse
-                .failure("json",
-                         request_json.getUserId())
+                .failure("json")
                 .toString().getBytes();
         }
         final Connection db = Database.pgsql(Main.arguments());
@@ -352,8 +350,7 @@ public class Service implements Runnable
         if (request_json == null)
         {
             return JSONRecommendationListResponse
-                .failure("json",
-                         request_json.getUserId())
+                .failure("json")
                 .toString().getBytes();
         }
         final Connection db = Database.pgsql(Main.arguments());

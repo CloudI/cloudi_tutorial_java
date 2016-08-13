@@ -15,8 +15,7 @@ public class JSONItemListRequest extends JSONRequest
 
     public boolean valid()
     {
-        return this.getMessageName() ==
-               JSONItemListRequest.message_name_valid &&
+        return this.getMessageName().equals(this.message_name_valid) &&
                this.user_id > 0 &&
                this.language != null &&
                this.language.length() >= 2 &&

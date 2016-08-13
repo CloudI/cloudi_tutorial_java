@@ -13,8 +13,7 @@ public class JSONItemRefreshRequest extends JSONRequest
 
     public boolean valid()
     {
-        return this.getMessageName() ==
-               JSONItemRefreshRequest.message_name_valid;
+        return this.getMessageName().equals(this.message_name_valid);
     }
 
 }

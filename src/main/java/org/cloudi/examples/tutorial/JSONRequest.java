@@ -19,7 +19,7 @@ public class JSONRequest
     {
         final T json_request = JSON.object()
                                    .fromJson(json, type);
-        if (json_request.valid())
+        if (! json_request.valid())
             return null;
         return json_request;
     }

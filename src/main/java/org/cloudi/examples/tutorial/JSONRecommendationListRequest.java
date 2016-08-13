@@ -15,8 +15,7 @@ public class JSONRecommendationListRequest extends JSONRequest
 
     public boolean valid()
     {
-        return this.getMessageName() ==
-               JSONRecommendationListRequest.message_name_valid &&
+        return this.getMessageName().equals(this.message_name_valid) &&
                this.user_id > 0;
     }
 
