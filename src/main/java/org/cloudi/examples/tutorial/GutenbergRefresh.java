@@ -72,7 +72,7 @@ public class GutenbergRefresh implements Runnable
             }
             if (this.cleanup() != 0)
                 throw new IOException("cleanup failed");
-            Main.info(this, "refreshed");
+            Main.info(this, "item_refresh done");
         }
         catch (Exception e)
         {
