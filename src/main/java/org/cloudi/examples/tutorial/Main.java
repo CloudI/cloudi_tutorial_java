@@ -29,13 +29,21 @@ public class Main
             Main.arguments_parsed = args_out;
 
             final int thread_count = API.thread_count();
+            if (thread_count < 2)
+            {
+                // using the forward API call to the same service
+                // means that there should be more than 1 thread
+                // to send service requests to
+                throw new RuntimeException("thread_count < 2");
+            }
+
             ExecutorService threads =
                 Executors.newFixedThreadPool(thread_count);
             for (int thread_index = 0;
                  thread_index < thread_count;
                  ++thread_index)
             {
-                threads.execute(new Task(thread_index));
+                threads.execute(new Service(thread_index));
             }
             threads.shutdown();
         }

@@ -43,47 +43,47 @@ public class JSONItem
         this.rating = rating;
     }
 
-    public final long getItemId()
+    public long getItemId()
     {
         return this.item_id;
     }
 
-    public final String getCreator()
+    public String getCreator()
     {
         return this.creator;
     }
 
-    public final String getCreatorLink()
+    public String getCreatorLink()
     {
         return this.creator_link;
     }
 
-    public final String getTitle()
+    public String getTitle()
     {
         return this.title;
     }
 
-    public final String getDateCreated()
+    public String getDateCreated()
     {
         return this.date_created;
     }
 
-    public final String[] getLanguages()
+    public String[] getLanguages()
     {
         return this.languages;
     }
 
-    public final String[] getSubjects()
+    public String[] getSubjects()
     {
         return this.subjects;
     }
 
-    public final Integer getDownloads()
+    public Integer getDownloads()
     {
         return this.downloads;
     }
 
-    public final Double getRating()
+    public Double getRating()
     {
         return this.rating;
     }
@@ -95,7 +95,7 @@ public class JSONItem
                                      Type typeOfSrc,
                                      JsonSerializationContext context)
         {
-            JsonObject object = new JsonObject();
+            final JsonObject object = new JsonObject();
             object.addProperty("item_id", src.getItemId());
             object.addProperty("creator", src.getCreator());
             object.addProperty("creator_link", src.getCreatorLink());

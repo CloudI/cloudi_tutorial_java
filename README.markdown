@@ -80,21 +80,21 @@ SERVICE API EXAMPLES
 
 Update an item's rating:
 
-    curl -X POST -d '{"user_id": 1, "item_id": 1, "rating": 5.0}' http://localhost:8080/tutorial/java/service/recommendation/update
+    curl -X POST -d '{"message_name": "recommendation_update", "user_id": 1, "item_id": 1, "rating": 5.0}' http://localhost:8080/tutorial/java/service/recommendation/update
 
 Get the current list of recommendations:
 
-    curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/recommendation/list
+    curl -X POST -d '{"message_name": "recommendation_list", "user_id": 1}' http://localhost:8080/tutorial/java/service/recommendation/list
 
 Get the current list of items with the user's current ratings:
 
-    curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/item/list
+    curl -X POST -d '{"message_name": "item_list", "user_id": 1, "language": "en"}' http://localhost:8080/tutorial/java/service/item/list
 
 Refresh the list of items with the books available at [gutenberg.org](http://www.gutenberg.org/):
 
-    curl -X POST -d '{}' http://localhost:8080/tutorial/java/service/item/refresh
+    curl -X POST -d '{"message_name": "item_refresh"}' http://localhost:8080/tutorial/java/service/item/refresh
 
 Update the recommendations model (public services often do this daily or weekly, but this can be done more frequently):
 
-    curl -X POST -d '{"user_id": 1}' http://localhost:8080/tutorial/java/service/recommendation/refresh
+    curl -X POST -d '{"message_name": "recommendation_refresh", "user_id": 1}' http://localhost:8080/tutorial/java/service/recommendation/refresh
 

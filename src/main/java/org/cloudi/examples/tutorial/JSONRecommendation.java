@@ -20,12 +20,12 @@ public class JSONRecommendation
         this.rating_expected = rating_expected;
     }
 
-    public final long getItemId()
+    public long getItemId()
     {
         return this.item_id;
     }
 
-    public final double getRatingExpected()
+    public double getRatingExpected()
     {
         return this.rating_expected;
     }
@@ -37,7 +37,7 @@ public class JSONRecommendation
                                      Type typeOfSrc,
                                      JsonSerializationContext context)
         {
-            JsonObject object = new JsonObject();
+            final JsonObject object = new JsonObject();
             object.addProperty("item_id", src.getItemId());
             object.addProperty("rating_expected", src.getRatingExpected());
             return object;

@@ -28,7 +28,8 @@ public class JSONItemListResponse extends JSONResponse
                                  final long user_id,
                                  final List<JSONItem> items)
     {
-        super(success, error);
+        super(JSONItemListRequest.message_name_valid,
+              success, error);
         this.user_id = user_id;
         this.items = items;
     }

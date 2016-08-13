@@ -4,22 +4,20 @@ package org.cloudi.examples.tutorial;
 
 public class JSONResponse
 {
+    private final String message_name;
     private final boolean success;
     private final String error;
 
-    public static JSONResponse success()
-    {
-        return new JSONResponse(true, null);
-    }
-
     public static JSONResponse failure(final String error)
     {
-        return new JSONResponse(false, error);
+        return new JSONResponse(null, false, error);
     }
 
-    protected JSONResponse(final boolean success,
+    protected JSONResponse(final String message_name,
+                           final boolean success,
                            final String error)
     {
+        this.message_name = message_name;
         this.success = success;
         this.error = error;
     }

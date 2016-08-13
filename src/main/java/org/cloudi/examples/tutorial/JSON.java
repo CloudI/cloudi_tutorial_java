@@ -22,6 +22,8 @@ public class JSON
     {
         return builder.registerTypeAdapter(JSONItem.class,
                                            new JSONItem.Serializer())
+                      .registerTypeAdapter(JSONLanguage.class,
+                                           new JSONLanguage.Serializer())
                       .registerTypeAdapter(JSONRecommendation.class,
                                            new JSONRecommendation.Serializer())
                       .serializeNulls()

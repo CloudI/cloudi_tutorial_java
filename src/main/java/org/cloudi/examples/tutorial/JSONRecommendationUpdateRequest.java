@@ -2,16 +2,27 @@
 // ex: set ft=java fenc=utf-8 sts=4 ts=4 sw=4 et:
 package org.cloudi.examples.tutorial;
 
-public class JSONRecommendationUpdateRequest
+public class JSONRecommendationUpdateRequest extends JSONRequest
 {
+    public static final String message_name_valid = "recommendation_update";
     private long user_id;
     private long item_id;
     private double rating;
 
     public static JSONRecommendationUpdateRequest fromString(final String json)
     {
-        return JSON.object()
-                   .fromJson(json, JSONRecommendationUpdateRequest.class);
+        return JSONRequest.fromString(json,
+                                      JSONRecommendationUpdateRequest.class);
+    }
+
+    public boolean valid()
+    {
+        return this.getMessageName() ==
+               JSONRecommendationUpdateRequest.message_name_valid &&
+               this.user_id > 0 &&
+               this.item_id > 0 &&
+               this.rating >= LenskitData.RATING_MIN &&
+               this.rating <= LenskitData.RATING_MAX;
     }
 
     public long getUserId()

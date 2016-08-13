@@ -6,6 +6,7 @@ package org.cloudi.examples.tutorial;
 import java.util.List;
 import java.util.LinkedList;
 import java.sql.Connection;
+import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -74,7 +75,8 @@ public class LenskitData
     }
 
     public final JSONResponse itemList(final Connection db,
-                                       final long user_id)
+                                       final long user_id,
+                                       final String language)
     {
         PreparedStatement select = null;
         ResultSet select_result = null;
@@ -95,8 +97,11 @@ public class LenskitData
                        "ratings.rating "+
                 "FROM items LEFT JOIN " +
                 "(SELECT * FROM ratings WHERE user_id = ?) AS ratings " +
-                "ON items.id = ratings.item_id");
+                "ON items.id = ratings.item_id " +
+                "WHERE ? = ANY (items.languages) " +
+                "ORDER BY items.date_created DESC");
             select.setLong(1, user_id);
+            select.setString(2, language);
             select_result = select.executeQuery();
             while (select_result.next())
             {
@@ -148,7 +153,7 @@ public class LenskitData
         }
         if (db_failure)
         {
-            return JSONRecommendationUpdateResponse.failure("db", user_id);
+            return JSONItemListResponse.failure("db", user_id);
         }
         else if (output == null)
         {
@@ -157,6 +162,56 @@ public class LenskitData
         else
         {
             return JSONItemListResponse.success(user_id, output);
+        }
+    }
+
+    public final JSONResponse languageList(final Connection db)
+    {
+        Statement select = null;
+        ResultSet select_result = null;
+        LinkedList<JSONLanguage> output = new LinkedList<JSONLanguage>();
+        boolean db_failure = false;
+        try
+        {
+            // select all items with the user's ratings
+            select = db.createStatement();
+            select_result = select.executeQuery(
+                "SELECT language " +
+                "FROM languages " +
+                "ORDER BY language");
+            while (select_result.next())
+            {
+                final String language =
+                    select_result.getString("language");
+                output.addLast(new JSONLanguage(language));
+            }
+        }
+        catch (SQLException e)
+        {
+            Database.printSQLException(e, Main.err);
+            db_failure = true;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace(Main.err);
+            db_failure = true;
+        }
+        finally
+        {
+            Database.close(select_result);
+            Database.close(select);
+        }
+        if (db_failure)
+        {
+            return JSONLanguageListResponse.failure("db");
+        }
+        else if (output == null)
+        {
+            return JSONLanguageListResponse.failure("db");
+        }
+        else
+        {
+            return JSONLanguageListResponse.success(output);
         }
     }
 

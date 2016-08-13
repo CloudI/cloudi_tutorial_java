@@ -34,7 +34,8 @@ public class JSONRecommendationListResponse extends JSONResponse
                                            final List<JSONRecommendation>
                                                recommendations)
     {
-        super(success, error);
+        super(JSONRecommendationListRequest.message_name_valid,
+              success, error);
         this.user_id = user_id;
         this.recommendations = recommendations;
     }
