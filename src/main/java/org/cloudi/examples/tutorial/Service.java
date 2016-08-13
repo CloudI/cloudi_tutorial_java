@@ -384,6 +384,7 @@ public class Service implements Runnable
                API.ForwardSyncException,
                API.InvalidInputException
     {
+        // handle any JSON request based on the "message_name" field
         final JSONRequest request_json =
             JSONRequest.fromString(new String(request));
         if (request_json == null)
@@ -392,7 +393,6 @@ public class Service implements Runnable
                 .failure("json")
                 .toString().getBytes();
         }
-        // route the request based on the "message_name" field in the JSON
         switch (request_json.getMessageName())
         {
             case JSONItemRefreshRequest.message_name_valid:
