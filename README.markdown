@@ -25,7 +25,7 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
        [{directory, "$PWD/html/"}]},
       {dest_refresh, none},
       {count_process, 4}],
-     [{prefix, "/tutorial/java/client/"},
+     [{prefix, "/tutorial/java/"},
       {module, cloudi_service_http_cowboy},
       {args,
        [{port, 8080}, {use_websockets, true}]},
