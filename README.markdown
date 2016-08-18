@@ -19,7 +19,7 @@ To execute the tutorial dynamically, it is necessary to create the CloudI servic
     export PWD=`pwd`
     export USER=`whoami`
     cat << EOF > website.conf
-    [[{prefix, "/tutorial/java/"},
+    [[{prefix, "/"},
       {module, cloudi_service_filesystem},
       {args,
        [{directory, "$PWD/html/"}]},

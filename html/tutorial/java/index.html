@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>CloudI Java Tutorial</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/themes/Vines.css" />
+  <link rel="stylesheet" href="css/themes/jquery.mobile.icons.min.css" />
+  <!-- http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.min.css -->
+  <link rel="stylesheet" href="css/jquery.mobile.structure-1.4.5.min.css" />
+  <!-- http://code.jquery.com/jquery-1.11.1.min.js -->
+  <script type="text/javascript" src="js/jquery-1.11.1.min.js"></script>
+  <!-- http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js -->
+  <script type="text/javascript" src="js/jquery.mobile-1.4.5.min.js"></script>
+ </head>
+ <body>
+  <!-- start of recommendation page -->
+  <div data-role="page" id="recommendation_page">
+   <!-- start of header -->
+   <div data-role="header" data-theme="b">
+    <h1>CloudI Java Tutorial</h1>
+   </div>
+   <!-- end header -->
+   <form name="recommendation_form" id="recommendation_form">
+    <div class="ui-field-contain">
+     <label for="user_id">user_id </label>
+     <input type="text" name="user_id" id="user_id" value="" />
+    </div>
+    <div class="ui-field-contain">
+     <label for="language">language </label>
+     <select name="language" id="language">
+      <option value="en" selected>en</option>
+     </select>
+    </div>
+    <!-- start of content -->
+    <div data-role="content" data-theme="b">
+     <!-- display rating list -->
+     <div name="rating_section" id="rating_section">
+      <p>
+       Please rate the following items on a scale from 0.5 to 5
+       with 5 being highest
+      </p>
+      <div name="rating_list" id="rating_list">
+      </div> 
+     </div>
+     <!-- display recommendations -->
+     <div name="recommendation_section" id="recommendation_section">
+      <p>You might also like:</p>
+      <ul name="recommendation_list" id="recommendation_list"
+          data-role="listview" data-inset="true">
+      </ul>
+     </div>
+    </div>
+    <!-- end of content -->
+   </form>
+   <!-- start footer -->
+   <div data-role="footer">
+    <label class="right" id="connection_status"></label>
+   </div>
+  </div>
+   <!-- end footer -->
+
+  </div>
+  <!-- end of recommendation page -->
+  <script type="text/javascript">
+
+var websocket = undefined;
+
+function display_language_list(obj) {
+    console.log("display_language_list()");
+    var language = document.getElementById("language");
+    var current = language.options[language.selectedIndex].text;
+    var i;
+    // remove all the current language selection entries
+    for(i = language.options.length - 1; i >= 0; i--) {
+        language.remove(i);
+    }
+    // add all the new language selection entries
+    var current_i = 0;
+    i = 0;
+    $.each(obj.languages, function (i, value) {
+        if (value.language == current) {
+            current_i = i;
+        }
+        var option = document.createElement("option");
+        option.text = value.language;
+        language.add(option, i);
+        i++;
+    });
+    // use the old selection as the current selection, if present
+    language.selectedIndex = current_i;
+}
+
+function select_item(item_id) {
+    console.log("selected item " + item_id);
+
+    // call the item detail web page
+    location.assign("itemdetail.html?id=" + item_id);
+}
+
+function display_recommendation_list(obj) {
+    console.log("display_recommendation_list()");
+
+    // add items to the list
+    var items_found = false;
+    $.each(obj.recommendations, function (i, item) {
+//        console.log("Item ID = " + item.id);
+        var tag =
+"<li><a data-icon=\"arrow-r\" data-iconpos=\"right\" " +
+  "onclick=\"select_item('" + item.id + "'); return false;\">" + item.title +
+"</a></li>";
+        $("#recommendation_list").append(tag).listview('refresh');
+        items_found = true;
+    });
+    if (items_found == true) {
+        // show the recommendation section div
+        $("#recommendation_section").show();
+    }
+    else {
+        // hide the recommendation section div
+        $("#recommendation_section").hide();
+    }
+}
+
+function select_rating(item_id) {
+    console.log("select_rating(" + item_id + ")");     
+    var user_id = document.getElementById("user_id").value;
+    var rating = $("#slider" + item_id).val();
+    var recommendation_update = {
+        message_name: "recommendation_update",
+        user_id:user_id,
+        item_id:item_id,
+        rating:rating
+    }; 
+    websocket_send(recommendation_update);
+}
+
+function display_item_list(obj) {
+    console.log("display_items_list()");
+
+    // add items to the list
+    var items_found = false;
+    $.each(obj.items, function (i, item) {
+        //console.log("Item ID = " + item.id);
+
+        var slider_id = "slider" + item.id;
+        var tag =
+"<div class=\"ui-field-contain\">" +
+"<div data-role=\"rangeslider\">" +
+"<label for=\"" + slider_id + "\">" + item.title + "</label>" +
+"<input class=\"myslide\" type=\"range\" name=\""  + slider_id +
+  "\" id=\"" + slider_id + "\" value=\"" + item.rating +
+  "\" min=\"0.5\" max=\"5.0\" " +
+  "data-highlight=\"true\" data-id=\"" + item.id + "\" data-mini=\"true\" />" +
+"</div>" +
+"<div data-role=\"fieldcontain\">" +
+"<input type=\"button\" value=\"Rate\" id=\"btn" + item.id +
+  "\" data-icon=\"check\" data-inline=\"true\" " +
+  "onclick=\"select_rating(" + item.id + "); return false;\" />" +
+"</div>" +
+"</div>";
+        console.log("tag=" + tag);
+return;
+
+        $("#rating_list").append(tag);
+        items_found=true;
+    });
+    if (items_found == true) {
+        // ask the DIV to apply the correct style to the new sliders
+        $("#rating_list").enhanceWithin();
+
+        // show the rating section div
+        $("#rating_section").show();
+    }
+    else {
+        // hide the rating section div
+        $("#rating_section").hide();
+    }
+}
+
+function websocket_send(data_object) {
+    if (websocket == undefined) {
+        alert("Not connected!");
+        return;
+    }
+    var data = JSON.stringify(data_object, null, 2);
+    websocket.send(data);
+    console.log("websocket sent: " + data);
+}
+
+// called when the web page has finished loading    
+$(document).ready(function () {
+    console.log("loaded, running javascript...");
+
+// hide the rating section div
+$("#rating_section").hide();
+
+// hide the recommendation section div
+$("#recommendation_section").hide();
+
+    // get the user id from HTML5 storage if it has been stored
+    var user_id = "1";
+    if (typeof Storage !== "undefined") {
+        // Web Storage support available
+        var user_id_stored = localStorage.user_id;
+        if (typeof user_id_stored == 'string') {
+            user_id = user_id_stored;
+        }
+        else {
+            localStorage.user_id = user_id;
+        }
+    } else {
+        // Web Storage support unavailable
+        alert("HTML5 is required!");
+        return;
+    }
+    // create a WebSocket connection for protocol usage
+    var host = "127.0.0.1";
+    var port = "8080";
+    var service_name = "/tutorial/java/service/client";
+    if (typeof WebSocket !== "function") {
+        alert("WebSocket support is required!");
+        return;
+    }
+    var websocket_url = "ws://" + host + ":" + port + service_name;
+    websocket = new WebSocket(websocket_url);
+    console.log("websocket connecting to " + websocket_url);
+    document.getElementById("connection_status").value = "Connecting";
+    websocket.onopen = function() {
+        console.log("websocket connected");
+        document.getElementById("connection_status").value = "Connected";
+        // request interface data
+        var user_id = document.getElementById("user_id").value;
+        var language = 'en'; // default language
+        var language_list = {
+            message_name: "language_list"
+        }; 
+        websocket_send(language_list);
+        var item_list = {
+            message_name: "item_list",
+            user_id: user_id,
+            language: language
+        }; 
+        //websocket_send(item_list);
+    };
+    websocket_message = function (data) {
+        var data_object = JSON.parse(data);
+        if (data_object.success !== true) {
+            if (typeof data_object.error === "string") {
+                console.log("websocket error: " + data_object.error);
+            }
+            else {
+                console.log("websocket invalid message: " + data);
+            }
+            return;
+        }
+        console.log("websocket received: " + data);
+        switch (data_object.message_name) {
+            case "recommendation_update":
+                document.getElementById("connection_status")
+                        .value = "Rating saved";
+                break;
+            case "recommendation_list":
+                document.getElementById("connection_status")
+                        .value = "Displaying data";
+                document.getElementById("connection_status")
+                        .value = "";
+                break;
+            case "recommendation_refresh":
+                break;
+            case "item_list":
+                display_item_list(data_object);
+                break;
+            case "item_refresh":
+                break;
+            case "language_list":
+                display_language_list(data_object);
+                break;
+            default:
+                console.log("websocket message \"" +
+                            data_object.message_name + "\" not implemented");
+                break;
+        }
+    };
+    websocket.onmessage = function (evt) {
+        var data = evt.data;
+        if (data instanceof Blob) {
+            // binary is received and used as text
+            var reader = new FileReader();
+            reader.readAsText(data, "text/plain");
+            reader.onload = function (reader_evt) {
+                data = reader_evt.target.result;
+                websocket_message(data);
+            };
+        }
+        else {
+            // text is received
+            websocket_message(data);
+        }
+    };
+    websocket.onclose = function() {
+        websocket = undefined;
+        console.log("websocket disconnected");
+        document.getElementById("connection_status").value = "Disconnected";
+    };
+    document.getElementById("user_id").value = user_id;
+    console.log("user_id = " + user_id);
+});
+
+  </script>
+ </body>
+</html>

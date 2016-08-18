@@ -127,7 +127,7 @@ public class Service implements Runnable
                 // which must be routed based on the content of the request
                 // (do not utilize thread 0, so that it can be used
                 //  as a forward destination, for requests that require it)
-                this.api.subscribe("client",
+                this.api.subscribe("client/get",
                                    this, "client");
             }
 
