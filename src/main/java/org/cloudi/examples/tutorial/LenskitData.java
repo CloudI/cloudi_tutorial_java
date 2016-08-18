@@ -215,6 +215,56 @@ public class LenskitData
         }
     }
 
+    public final JSONResponse subjectList(final Connection db)
+    {
+        Statement select = null;
+        ResultSet select_result = null;
+        LinkedList<JSONSubject> output = new LinkedList<JSONSubject>();
+        boolean db_failure = false;
+        try
+        {
+            // select all items with the user's ratings
+            select = db.createStatement();
+            select_result = select.executeQuery(
+                "SELECT subject " +
+                "FROM subjects " +
+                "ORDER BY subject");
+            while (select_result.next())
+            {
+                final String subject =
+                    select_result.getString("subject");
+                output.addLast(new JSONSubject(subject));
+            }
+        }
+        catch (SQLException e)
+        {
+            Database.printSQLException(e, Main.err);
+            db_failure = true;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace(Main.err);
+            db_failure = true;
+        }
+        finally
+        {
+            Database.close(select_result);
+            Database.close(select);
+        }
+        if (db_failure)
+        {
+            return JSONSubjectListResponse.failure("db");
+        }
+        else if (output == null)
+        {
+            return JSONSubjectListResponse.failure("db");
+        }
+        else
+        {
+            return JSONSubjectListResponse.success(output);
+        }
+    }
+
     public final JSONResponse recommendationUpdate(final Connection db,
                                                    final long user_id,
                                                    final long item_id,

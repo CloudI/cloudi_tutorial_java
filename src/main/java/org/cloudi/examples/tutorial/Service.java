@@ -108,6 +108,8 @@ public class Service implements Runnable
                                this, "itemList");
             this.api.subscribe("language/list/post",
                                this, "languageList");
+            this.api.subscribe("subject/list/post",
+                               this, "subjectList");
             if (this.thread_index == 0)
             {
                 // only a single thread in any OS process
@@ -270,6 +272,40 @@ public class Service implements Runnable
         return response_json.toString().getBytes();
     }
 
+    public Object subjectList(Integer command, String name,
+                              String pattern, byte[] request_info,
+                              byte[] request, Integer timeout,
+                              Byte priority, byte[] trans_id,
+                              OtpErlangPid pid)
+    {
+        // generate a list of all the subjects which have items available
+        final JSONSubjectListRequest request_json =
+            JSONSubjectListRequest.fromString(new String(request));
+        if (request_json == null)
+        {
+            return JSONSubjectListResponse
+                .failure("json")
+                .toString().getBytes();
+        }
+        final Connection db = Database.pgsql(Main.arguments());
+        if (db == null)
+        {
+            return JSONSubjectListResponse
+                .failure("db")
+                .toString().getBytes();
+        }
+        final LenskitData lenskit = Service.lenskit();
+        if (lenskit == null)
+        {
+            return JSONSubjectListResponse
+                .failure("lenskit")
+                .toString().getBytes();
+        }
+        final JSONResponse response_json = lenskit.subjectList(db);
+        Database.close(db);
+        return response_json.toString().getBytes();
+    }
+
     public Object recommendationRefresh(Integer command, String name,
                                         String pattern, byte[] request_info,
                                         byte[] request, Integer timeout,
@@ -413,6 +449,11 @@ public class Service implements Runnable
                                          request_info, request,
                                          timeout, priority,
                                          trans_id, pid);
+            case JSONSubjectListRequest.message_name_valid:
+                return this.subjectList(command, name, pattern,
+                                        request_info, request,
+                                        timeout, priority,
+                                        trans_id, pid);
             case JSONRecommendationRefreshRequest.message_name_valid:
                 final String name_recommendation_refresh =
                     this.api.prefix() + "recommend/refresh/post";

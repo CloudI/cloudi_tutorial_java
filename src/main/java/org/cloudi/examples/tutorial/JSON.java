@@ -24,6 +24,8 @@ public class JSON
                                            new JSONItem.Serializer())
                       .registerTypeAdapter(JSONLanguage.class,
                                            new JSONLanguage.Serializer())
+                      .registerTypeAdapter(JSONSubject.class,
+                                           new JSONSubject.Serializer())
                       .registerTypeAdapter(JSONRecommendation.class,
                                            new JSONRecommendation.Serializer())
                       .serializeNulls()

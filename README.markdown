@@ -94,6 +94,10 @@ Get the current list of languages that items are available in:
 
     curl -X POST -d '{"message_name": "language_list"}' http://localhost:8080/tutorial/java/service/language/list
 
+Get the current list of subjects that items are available in:
+
+    curl -X POST -d '{"message_name": "subject_list"}' http://localhost:8080/tutorial/java/service/subject/list
+
 Refresh the list of items with the books available at [gutenberg.org](http://www.gutenberg.org/):
 
     curl -X POST -d '{"message_name": "item_refresh"}' http://localhost:8080/tutorial/java/service/item/refresh
