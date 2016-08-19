@@ -7,7 +7,7 @@ import java.util.LinkedList;
 
 public class JSONSubjectListResponse extends JSONResponse
 {
-    private final List<JSONSubject> languages;
+    private final List<JSONSubject> subjects;
 
     public static JSONSubjectListResponse success(final List<JSONSubject> l)
     {
@@ -22,10 +22,10 @@ public class JSONSubjectListResponse extends JSONResponse
 
     private JSONSubjectListResponse(final boolean success,
                                     final String error,
-                                    final List<JSONSubject> languages)
+                                    final List<JSONSubject> subjects)
     {
         super(JSONSubjectListRequest.message_name_valid, success, error);
-        this.languages = languages;
+        this.subjects = subjects;
     }
 
 }

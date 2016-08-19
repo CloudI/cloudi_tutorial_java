@@ -29,7 +29,13 @@
     <div class="ui-field-contain">
      <label for="language">language </label>
      <select name="language" id="language">
-      <option value="en" selected>en</option>
+      <option value="0" selected></option>
+     </select>
+    </div>
+    <div class="ui-field-contain">
+     <label for="subject">Subject </label>
+     <select name="subject" id="subject">
+      <option value="0" selected></option>
      </select>
     </div>
     <!-- start of content -->
@@ -66,29 +72,112 @@
 
 var websocket = undefined;
 
-function display_language_list(obj) {
-    console.log("display_language_list()");
-    var language = document.getElementById("language");
-    var current = language.options[language.selectedIndex].text;
-    var i;
-    // remove all the current language selection entries
-    for(i = language.options.length - 1; i >= 0; i--) {
-        language.remove(i);
+function element_event_send(element, event_name) {
+    var standard_browser = document.createEvent;
+    var e;
+    if (standard_browser) {
+        e = document.createEvent("HTMLEvents");
+        e.initEvent(event_name, true, true);
     }
-    // add all the new language selection entries
-    var current_i = 0;
-    i = 0;
-    $.each(obj.languages, function (i, value) {
-        if (value.language == current) {
+    else {
+        e = document.createEventObject();
+        e.eventType = event_name;
+    }
+    e.eventName = event_name;
+    if (standard_browser) {
+        element.dispatchEvent(e);
+    }
+    else {
+        element.fireEvent("on" + e.eventType, e);
+    }
+}
+
+function element_event_handler_add(element, event_name, f) {
+    if (element.attachEvent) {
+        element["e" + event_name + f] = f;
+        element[event_name + f] = function() {
+            element["e" + event_name + f](window.event);
+        }
+        element.attachEvent("on" + event_name, element[event_name + f]);
+    }
+    else {
+        element.addEventListener(event_name, f, false);
+    }
+}
+
+function element_event_handler_remove(element, event_name, f) {
+    if (element.detachEvent) {
+        element.detachEvent("on" + event_name, element[event_name + f]);
+        element[event_name + f] = null;
+        element["e" + event_name + f] = null;
+    }
+    else {
+        element.removeEventListener(event_name, f, false);
+    }
+}
+
+function options_set_first(id, value) {
+    var select = document.getElementById(id);
+    var option = select.options[0];
+    option.text = value;
+    element_event_send(select, "change");
+}
+
+function options_update(id, list, field) {
+    var select = document.getElementById(id);
+    var current = select.options[select.selectedIndex].text;
+    var i;
+    // remove all the current entries
+    for(i = select.options.length - 1; i >= 0; i--) {
+        select.remove(i);
+    }
+    // add all the new entries
+    var current_i = undefined;
+    for (i = 0; i < list.length; i++) {
+        var value = list[i][field];
+        var option = document.createElement("option");
+        option.value = i;
+        option.text = value;
+        if (value == current) {
+            option.selected = true;
             current_i = i;
         }
-        var option = document.createElement("option");
-        option.text = value.language;
-        language.add(option, i);
-        i++;
-    });
+        select.add(option, i);
+    }
     // use the old selection as the current selection, if present
-    language.selectedIndex = current_i;
+    if (typeof current_i !== undefined) {
+        select.selectedIndex = current_i;
+    }
+    else {
+        select.selectedIndex = 0;
+    }
+    element_event_send(select, 'change');
+}
+
+function options_selected_store(id, field) {
+    var select = document.getElementById(id);
+    var current = select.options[select.selectedIndex].text;
+    localStorage[field] = current;
+}
+
+function store_user_id_set() {
+    localStorage["user_id"] = document.getElementById("user_id").value;
+}
+
+function store_language_set() {
+    options_selected_store("language", "language");
+}
+
+function store_subject_set() {
+    options_selected_store("subject", "subject");
+}
+
+function display_language_list(obj) {
+    options_update("language", obj.languages, "language");
+}
+
+function display_subject_list(obj) {
+    options_update("subject", obj.subjects, "subject");
 }
 
 function select_item(item_id) {
@@ -103,15 +192,19 @@ function display_recommendation_list(obj) {
 
     // add items to the list
     var items_found = false;
-    $.each(obj.recommendations, function (i, item) {
+    var i;
+    var list = obj.recommendations;
+    for (i = 0; i < list.length; i++) {
+        var item = list[i];
 //        console.log("Item ID = " + item.id);
         var tag =
 "<li><a data-icon=\"arrow-r\" data-iconpos=\"right\" " +
-  "onclick=\"select_item('" + item.id + "'); return false;\">" + item.title +
+  "onclick=\"select_item('" + item.item_id + "'); return false;\">" +
+item.title +
 "</a></li>";
         $("#recommendation_list").append(tag).listview('refresh');
         items_found = true;
-    });
+    }
     if (items_found == true) {
         // show the recommendation section div
         $("#recommendation_section").show();
@@ -192,14 +285,14 @@ function websocket_send(data_object) {
 $(document).ready(function () {
     console.log("loaded, running javascript...");
 
-// hide the rating section div
+//XXX
 $("#rating_section").hide();
-
-// hide the recommendation section div
 $("#recommendation_section").hide();
 
-    // get the user id from HTML5 storage if it has been stored
+    // get the user data from HTML5 storage if it has been stored
     var user_id = "1";
+    var language = "en";
+    var subject = "Philosophy";
     if (typeof Storage !== "undefined") {
         // Web Storage support available
         var user_id_stored = localStorage.user_id;
@@ -209,11 +302,32 @@ $("#recommendation_section").hide();
         else {
             localStorage.user_id = user_id;
         }
-    } else {
+        var language_stored = localStorage.language;
+        if (typeof language_stored == 'string') {
+            language = language_stored;
+        }
+        else {
+            localStorage.language = language;
+        }
+        var subject_stored = localStorage.subject;
+        if (typeof subject_stored == 'string') {
+            subject = subject_stored;
+        }
+        else {
+            localStorage.subject = subject;
+        }
+    }
+    else {
         // Web Storage support unavailable
         alert("HTML5 is required!");
         return;
     }
+    document.getElementById("user_id").value = user_id;
+    options_set_first("language", language);
+    options_set_first("subject", subject);
+    console.log("user_id = " + user_id);
+    console.log("language = " + language);
+    console.log("subject = " + subject);
     // create a WebSocket connection for protocol usage
     var host = "127.0.0.1";
     var port = "8080";
@@ -229,19 +343,35 @@ $("#recommendation_section").hide();
     websocket.onopen = function() {
         console.log("websocket connected");
         document.getElementById("connection_status").value = "Connected";
-        // request interface data
-        var user_id = document.getElementById("user_id").value;
-        var language = 'en'; // default language
+
+        // update the language selection options
         var language_list = {
             message_name: "language_list"
         }; 
         websocket_send(language_list);
+
+        // update the subject selection options
+        var subject_list = {
+            message_name: "subject_list"
+        }; 
+        websocket_send(subject_list);
+
+        // add local storage events
+        element_event_handler_add(document.getElementById("user_id"),
+                                  "input", store_user_id_set);
+        element_event_handler_add(document.getElementById("language"),
+                                  "change", store_language_set);
+        element_event_handler_add(document.getElementById("subject"),
+                                  "change", store_subject_set);
+/*XXX
+        var user_id = document.getElementById("user_id").value;
         var item_list = {
             message_name: "item_list",
             user_id: user_id,
             language: language
         }; 
         //websocket_send(item_list);
+        */
     };
     websocket_message = function (data) {
         var data_object = JSON.parse(data);
@@ -276,6 +406,9 @@ $("#recommendation_section").hide();
             case "language_list":
                 display_language_list(data_object);
                 break;
+            case "subject_list":
+                display_subject_list(data_object);
+                break;
             default:
                 console.log("websocket message \"" +
                             data_object.message_name + "\" not implemented");
@@ -302,9 +435,14 @@ $("#recommendation_section").hide();
         websocket = undefined;
         console.log("websocket disconnected");
         document.getElementById("connection_status").value = "Disconnected";
+        // remove local storage events
+        element_event_handler_remove(document.getElementById("user_id"),
+                                     "input");
+        element_event_handler_remove(document.getElementById("language"),
+                                     "change");
+        element_event_handler_remove(document.getElementById("subject"),
+                                     "change");
     };
-    document.getElementById("user_id").value = user_id;
-    console.log("user_id = " + user_id);
 });
 
   </script>
