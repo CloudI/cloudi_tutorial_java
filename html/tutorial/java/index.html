@@ -33,7 +33,7 @@
      </select>
     </div>
     <div class="ui-field-contain">
-     <label for="subject">Subject </label>
+     <label for="subject">subject </label>
      <select name="subject" id="subject">
       <option value="0" selected></option>
      </select>
@@ -61,7 +61,7 @@
    </form>
    <!-- start footer -->
    <div data-role="footer">
-    <label class="right" id="connection_status"></label>
+    <p align="right" id="connection_status"></p>
    </div>
   </div>
    <!-- end footer -->
@@ -172,6 +172,11 @@ function store_subject_set() {
     options_selected_store("subject", "subject");
 }
 
+function display_connection_status(value) {
+    var p = document.getElementById("connection_status");
+    p.innerHTML = value;
+}
+
 function display_language_list(obj) {
     options_update("language", obj.languages, "language");
 }
@@ -221,9 +226,9 @@ function select_rating(item_id) {
     var rating = $("#slider" + item_id).val();
     var recommendation_update = {
         message_name: "recommendation_update",
-        user_id:user_id,
-        item_id:item_id,
-        rating:rating
+        user_id: user_id,
+        item_id: item_id,
+        rating: rating
     }; 
     websocket_send(recommendation_update);
 }
@@ -339,10 +344,10 @@ $("#recommendation_section").hide();
     var websocket_url = "ws://" + host + ":" + port + service_name;
     websocket = new WebSocket(websocket_url);
     console.log("websocket connecting to " + websocket_url);
-    document.getElementById("connection_status").value = "Connecting";
+    display_connection_status("Connecting");
     websocket.onopen = function() {
         console.log("websocket connected");
-        document.getElementById("connection_status").value = "Connected";
+        display_connection_status("Connected");
 
         // update the language selection options
         var language_list = {
@@ -387,14 +392,11 @@ $("#recommendation_section").hide();
         console.log("websocket received: " + data);
         switch (data_object.message_name) {
             case "recommendation_update":
-                document.getElementById("connection_status")
-                        .value = "Rating saved";
+                display_connection_status("Rating saved");
                 break;
             case "recommendation_list":
-                document.getElementById("connection_status")
-                        .value = "Displaying data";
-                document.getElementById("connection_status")
-                        .value = "";
+                display_connection_status("Displaying data");
+                display_connection_status("");
                 break;
             case "recommendation_refresh":
                 break;
@@ -434,7 +436,7 @@ $("#recommendation_section").hide();
     websocket.onclose = function() {
         websocket = undefined;
         console.log("websocket disconnected");
-        document.getElementById("connection_status").value = "Disconnected";
+        display_connection_status("Disconnected");
         // remove local storage events
         element_event_handler_remove(document.getElementById("user_id"),
                                      "input");

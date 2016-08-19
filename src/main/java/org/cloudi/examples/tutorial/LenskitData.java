@@ -76,7 +76,8 @@ public class LenskitData
 
     public final JSONResponse itemList(final Connection db,
                                        final long user_id,
-                                       final String language)
+                                       final String language,
+                                       final String subject)
     {
         PreparedStatement select = null;
         ResultSet select_result = null;
@@ -85,6 +86,15 @@ public class LenskitData
         try
         {
             // select all items with the user's ratings
+            String subject_query;
+            if (subject != null)
+            {
+                subject_query = "AND ? = ANY (items.subjects) ";
+            }
+            else
+            {
+                subject_query = "";
+            }
             select = db.prepareStatement(
                 "SELECT items.id AS item_id, " +
                        "items.creator, " +
@@ -98,10 +108,14 @@ public class LenskitData
                 "FROM items LEFT JOIN " +
                 "(SELECT * FROM ratings WHERE user_id = ?) AS ratings " +
                 "ON items.id = ratings.item_id " +
-                "WHERE ? = ANY (items.languages) " +
+                "WHERE " +
+                "? = ANY (items.languages) " +
+                subject_query +
                 "ORDER BY items.date_created DESC");
             select.setLong(1, user_id);
             select.setString(2, language);
+            if (subject != null)
+                select.setString(3, subject);
             select_result = select.executeQuery();
             while (select_result.next())
             {
@@ -153,15 +167,18 @@ public class LenskitData
         }
         if (db_failure)
         {
-            return JSONItemListResponse.failure("db", user_id);
+            return JSONItemListResponse.failure("db", user_id,
+                                                language, subject);
         }
         else if (output == null)
         {
-            return JSONItemListResponse.failure("db", user_id);
+            return JSONItemListResponse.failure("db", user_id,
+                                                language, subject);
         }
         else
         {
-            return JSONItemListResponse.success(user_id, output);
+            return JSONItemListResponse.success(user_id,
+                                                language, subject, output);
         }
     }
 

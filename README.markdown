@@ -88,7 +88,7 @@ Get the current list of recommendations:
 
 Get the current list of items with the user's current ratings:
 
-    curl -X POST -d '{"message_name": "item_list", "user_id": 1, "language": "en"}' http://localhost:8080/tutorial/java/service/item/list
+    curl -X POST -d '{"message_name": "item_list", "user_id": 1, "language": "en", "subject": "Philosophy"}' http://localhost:8080/tutorial/java/service/item/list
 
 Get the current list of languages that items are available in:
 

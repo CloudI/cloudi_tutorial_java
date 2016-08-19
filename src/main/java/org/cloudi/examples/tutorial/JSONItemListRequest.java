@@ -7,6 +7,7 @@ public class JSONItemListRequest extends JSONRequest
     public static final String message_name_valid = "item_list";
     private long user_id;
     private String language;
+    private String subject;
 
     public static JSONItemListRequest fromString(final String json)
     {
@@ -30,6 +31,11 @@ public class JSONItemListRequest extends JSONRequest
     public String getLanguage()
     {
         return this.language;
+    }
+
+    public String getSubject()
+    {
+        return this.subject;
     }
 
 }

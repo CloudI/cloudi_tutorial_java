@@ -219,7 +219,9 @@ public class Service implements Runnable
         {
             return JSONItemListResponse
                 .failure("db",
-                         request_json.getUserId())
+                         request_json.getUserId(),
+                         request_json.getLanguage(),
+                         request_json.getSubject())
                 .toString().getBytes();
         }
         final LenskitData lenskit = Service.lenskit();
@@ -227,13 +229,16 @@ public class Service implements Runnable
         {
             return JSONItemListResponse
                 .failure("lenskit",
-                         request_json.getUserId())
+                         request_json.getUserId(),
+                         request_json.getLanguage(),
+                         request_json.getSubject())
                 .toString().getBytes();
         }
         final JSONResponse response_json =
             lenskit.itemList(db,
                              request_json.getUserId(),
-                             request_json.getLanguage());
+                             request_json.getLanguage(),
+                             request_json.getSubject());
         Database.close(db);
         return response_json.toString().getBytes();
     }
