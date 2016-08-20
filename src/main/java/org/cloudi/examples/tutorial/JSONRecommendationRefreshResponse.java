@@ -7,6 +7,13 @@ import java.util.LinkedList;
 
 public class JSONRecommendationRefreshResponse extends JSONResponse
 {
+    public static JSONRecommendationRefreshResponse fromString(final String
+                                                                   json)
+    {
+        return JSON.object()
+                   .fromJson(json, JSONRecommendationRefreshResponse.class);
+    }
+
     public static JSONRecommendationRefreshResponse success()
     {
         return new JSONRecommendationRefreshResponse(true, null);

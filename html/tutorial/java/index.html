@@ -183,8 +183,8 @@ function update_stored_user_id_set() {
     localStorage.user_id = user_id;
     if (typeof update_user_id_timer == "undefined") {
         var update_function = function() {
-            update_items();
             update_recommendations();
+            update_items();
             update_user_id_timer = undefined;
         };
         update_user_id_timer = setTimeout(update_function,

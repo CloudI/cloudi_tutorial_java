@@ -4,9 +4,9 @@ package org.cloudi.examples.tutorial;
 
 public class JSONResponse
 {
-    private final String message_name;
-    private final boolean success;
-    private final String error;
+    private String message_name;
+    private boolean success;
+    private String error;
 
     public static JSONResponse failure(final String error)
     {
@@ -25,6 +25,11 @@ public class JSONResponse
     public String toString()
     {
         return JSON.object().toJson(this);
+    }
+
+    public boolean getSuccess()
+    {
+        return this.success;
     }
 
 }

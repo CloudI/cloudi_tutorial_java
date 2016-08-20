@@ -5,6 +5,7 @@ package org.cloudi.examples.tutorial;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.List;
 import java.sql.Connection;
 import com.ericsson.otp.erlang.OtpErlangPid;
 import org.cloudi.API;
@@ -423,7 +424,9 @@ public class Service implements Runnable
                          OtpErlangPid pid)
         throws API.ForwardAsyncException,
                API.ForwardSyncException,
-               API.InvalidInputException
+               API.InvalidInputException,
+               API.MessageDecodingException,
+               API.TerminateException
     {
         // handle any JSON request based on the "message_name" field
         final JSONRequest request_json =
@@ -437,6 +440,7 @@ public class Service implements Runnable
         switch (request_json.getMessageName())
         {
             case JSONItemRefreshRequest.message_name_valid:
+                // a single OS process will refresh the single database
                 final String name_item_refresh =
                     this.api.prefix() + "item/refresh/post";
                 this.api.forward_(command, name_item_refresh,
@@ -460,13 +464,59 @@ public class Service implements Runnable
                                         timeout, priority,
                                         trans_id, pid);
             case JSONRecommendationRefreshRequest.message_name_valid:
+                // all OS processes need to refresh their lenskit data
                 final String name_recommendation_refresh =
-                    this.api.prefix() + "recommend/refresh/post";
-                this.api.forward_(command, name_recommendation_refresh,
-                                  request_info, request,
-                                  timeout, priority,
-                                  trans_id, pid);
-                return null;
+                    this.api.prefix() + "recommendation/refresh/post";
+                List<API.TransId> refresh_requests =
+                    this.api.mcast_async(name_recommendation_refresh,
+                                         request_info, request,
+                                         timeout, priority);
+                if (refresh_requests.isEmpty())
+                    return ("").getBytes(); // timeout
+                final int timeout_decrement = 500;
+                API.TransId refresh_request_id = refresh_requests.remove(0);
+                while (timeout > 0)
+                {
+                    API.Response refresh_response =
+                        this.api.recv_async(timeout_decrement,
+                                            refresh_request_id.id);
+                    if (refresh_response.isTimeout())
+                    {
+                        if (timeout_decrement >= timeout)
+                            timeout = 0;
+                        else
+                            timeout -= timeout_decrement;
+                    }
+                    else
+                    {
+                        final JSONRecommendationRefreshResponse
+                            refresh_response_json =
+                                JSONRecommendationRefreshResponse
+                                .fromString(new String(refresh_response
+                                                       .response));
+                        if (! refresh_response_json.getSuccess())
+                        {
+                            final byte[][] error = {refresh_response
+                                                    .response_info,
+                                                    refresh_response
+                                                    .response};
+                            return error;
+                        }
+                        else if (refresh_requests.isEmpty())
+                        {
+                            final byte[][] success = {refresh_response
+                                                      .response_info,
+                                                      refresh_response
+                                                      .response};
+                            return success;
+                        }
+                        else
+                        {
+                            refresh_request_id = refresh_requests.remove(0);
+                        }
+                    }
+                }
+                return ("").getBytes(); // timeout
             case JSONRecommendationListRequest.message_name_valid:
                 return this.recommendationList(command, name, pattern,
                                                request_info, request,
