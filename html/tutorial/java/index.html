@@ -73,9 +73,9 @@
 var RATING_MIN = "0.5";
 var RATING_MAX = "5.0";
 var RATING_STEP = "0.5";
-var UPDATE_ITEMS_USER_ID_DELAY = 2000; // milliseconds
+var UPDATE_USER_ID_TIMER_DELAY = 2000; // milliseconds
 var websocket = undefined;
-var update_items_timer = undefined;
+var update_user_id_timer = undefined;
 
 function element_event_send(element, event_name) {
     var standard_browser = document.createEvent;
@@ -181,20 +181,29 @@ function update_stored_user_id_set() {
         return;
     }
     localStorage.user_id = user_id;
-    if (typeof update_items_timer == "undefined") {
-        update_items_timer = setTimeout(update_items,
-                                        UPDATE_ITEMS_USER_ID_DELAY);
+    if (typeof update_user_id_timer == "undefined") {
+        var update_function = function() {
+            update_items();
+            update_recommendations();
+            update_user_id_timer = undefined;
+        };
+        update_user_id_timer = setTimeout(update_function,
+                                          UPDATE_USER_ID_TIMER_DELAY);
     }
 }
 
 function update_stored_language_set() {
     if (! options_selected_store("language", "language"))
         return;
+    else if (typeof update_user_id_timer != "undefined")
+        return;
     update_items();
 }
 
 function update_stored_subject_set() {
     if (! options_selected_store("subject", "subject"))
+        return;
+    else if (typeof update_user_id_timer != "undefined")
         return;
     update_items();
 }
@@ -214,10 +223,6 @@ function update_subjects() {
 }
 
 function update_items() {
-    if (typeof update_items_timer != "undefined") {
-        clearTimeout(update_items_timer);
-        update_items_timer = undefined;
-    }
     var item_list = {
         message_name: "item_list",
         user_id: localStorage.user_id,
@@ -225,6 +230,9 @@ function update_items() {
         subject: localStorage.subject
     }; 
     websocket_send(item_list);
+}
+
+function update_recommendations() {
     var recommendation_list = {
         message_name: "recommendation_list",
         user_id: localStorage.user_id
@@ -440,6 +448,7 @@ $(document).ready(function () {
         display_connection_status("Connected");
         update_languages();
         update_subjects();
+        update_recommendations();
         update_items();
 
         // add update events
