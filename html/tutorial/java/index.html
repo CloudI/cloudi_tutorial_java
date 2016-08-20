@@ -42,19 +42,18 @@
     <!-- start of content -->
     <div data-role="content" data-theme="b">
      <!-- display recommendations -->
-     <div name="recommendation_section" id="recommendation_section">
+     <div name="recommendation_list_content" id="recommendation_list_content">
       <p>You might also like:</p>
-      <ul name="recommendation_list" id="recommendation_list"
-          data-role="listview" data-inset="true">
-      </ul>
+      <div name="recommendation_list" id="recommendation_list">
+      </div>
      </div>
      <!-- display rating list -->
-     <div name="rating_section" id="rating_section">
+     <div name="item_list_content" id="item_list_content">
       <p>
        Please rate the following items on a scale from 0.5 to 5
        with 5 being highest
       </p>
-      <div name="rating_list" id="rating_list">
+      <div name="item_list" id="item_list">
       </div> 
      </div>
     </div>
@@ -171,8 +170,16 @@ function options_selected_store(id, field) {
 
 function update_stored_user_id_set() {
     var user_id = document.getElementById("user_id").value;
-    if (user_id == localStorage.user_id)
+    if (user_id == "") {
         return;
+    }
+    else if (user_id !== "" + parseInt(user_id, 10)) {
+        alert("user_id is an integer value! (a Java long)");
+        return;
+    }
+    else if (user_id == localStorage.user_id) {
+        return;
+    }
     localStorage.user_id = user_id;
     if (typeof update_items_timer == "undefined") {
         update_items_timer = setTimeout(update_items,
@@ -218,11 +225,20 @@ function update_items() {
         subject: localStorage.subject
     }; 
     websocket_send(item_list);
+    var recommendation_list = {
+        message_name: "recommendation_list",
+        user_id: localStorage.user_id
+    }; 
+    websocket_send(recommendation_list);
 }
 
-function update_rating(item_id) {
-    console.log("update_rating(" + item_id + ")");     
-    var rating = $("#slider" + item_id).val();
+function update_rating(item_id, slider_id, button_id) {
+    // change button to "Update" mode
+    $("#" + button_id).buttonMarkup({icon: "refresh"})
+                      .text("Update")
+                      .trigger("refresh");
+    // update rating value
+    var rating = $("#" + slider_id).val();
     var recommendation_update = {
         message_name: "recommendation_update",
         user_id: localStorage.user_id,
@@ -230,10 +246,6 @@ function update_rating(item_id) {
         rating: rating
     }; 
     websocket_send(recommendation_update);
-    // change button to "Update" mode
-    $("#button" + item_id).buttonMarkup({icon: "refresh"})
-                          .text("Update")
-                          .trigger("refresh");
 }
 
 function display_connection_status(value) {
@@ -249,52 +261,51 @@ function display_subject_list(obj) {
     options_update("subject", obj.subjects, "subject");
 }
 
-function select_item(item_id) {
-    console.log("selected item " + item_id);
-
-    // call the item detail web page
-    location.assign("itemdetail.html?id=" + item_id);
-}
-
 function display_recommendation_list(obj) {
-    console.log("display_recommendation_list()");
-
-    // add items to the list
-    var items_found = false;
-    var i;
-    var list = obj.recommendations;
-    for (i = 0; i < list.length; i++) {
-        var item = list[i];
-//        console.log("Item ID = " + item.id);
-        var tag =
-"<li><a data-icon=\"arrow-r\" data-iconpos=\"right\" " +
-  "onclick=\"select_item(\"" + item.item_id + "\"); return false;\">" +
-item.title +
-"</a></li>";
-        $("#recommendation_list").append(tag).listview("refresh");
-        items_found = true;
-    }
-    if (items_found) {
-        // show the recommendation section div
-        $("#recommendation_section").show();
+    html = html_item_list(obj.recommendations);
+    if (html != "") {
+        document.getElementById("recommendation_list").innerHTML = html;
+        $("#recommendation_list").enhanceWithin();
+        $("#recommendation_list_content").show();
     }
     else {
-        // hide the recommendation section div
-        $("#recommendation_section").hide();
+        $("#recommendation_list_content").hide();
     }
 }
 
 function display_item_list(obj) {
+    html = html_item_list(obj.items);
+    if (html != "") {
+        document.getElementById("item_list").innerHTML = html;
+        $("#item_list").enhanceWithin();
+        $("#item_list_content").show();
+    }
+    else {
+        $("#item_list_content").hide();
+    }
+}
+
+function html_item_list(list) {
     // add items to the list
     var html = "";
     var i;
-    var list = obj.items;
     for (i = 0; i < list.length; i++) {
         var item = list[i];
-        //console.log("Item ID = " + item.item_id);
-
-        var slider_id = "slider" + item.item_id;
-        var button_id = "button" + item.item_id;
+        var slider_id;
+        var button_id;
+        var recommendation = typeof item.rating_expected == "number";
+        if (recommendation) {
+            slider_id = "slider" + item.item_id + "_recommendation";
+            button_id = "button" + item.item_id + "_recommendation";
+            html_language_subject =
+"[" + item.languages.join(", ") + "] [" + item.subjects.join(", ") + "]" +
+"<br />";
+        }
+        else {
+            slider_id = "slider" + item.item_id + "_item";
+            button_id = "button" + item.item_id + "_item";
+            html_language_subject = "";
+        }
         var html_creator;
         if (item.creator_link != null) {
             html_creator =
@@ -305,6 +316,7 @@ item.creator +
         else {
             html_creator = item.creator;
         }
+        var html_language_subject;
         var button_icon;
         var button_text;
         var rating;
@@ -312,6 +324,11 @@ item.creator +
             button_icon = "refresh";
             button_text = "Update";
             rating = item.rating;
+        }
+        else if (recommendation) {
+            button_icon = "check";
+            button_text = "Rate (expecting " + item.rating_expected + ")";
+            rating = RATING_MIN;
         }
         else {
             button_icon = "check";
@@ -325,6 +342,7 @@ item.creator +
 "<a href=\"http://www.gutenberg.org/ebooks/" + item.item_id +
   "\" target=\"_blank\">" + item.title + "</a><br />" +
 "by&nbsp;" + html_creator + "<br />" +
+html_language_subject +
 "(added&nbsp;on&nbsp;" + item.date_created + ")" +
 "</label>" +
 "<input type=\"range\" name=\""  + slider_id + "\" id=\"" + slider_id +
@@ -337,23 +355,16 @@ item.creator +
 "<div data-role=\"fieldcontain\">" +
 "<a data-role=\"button\" id=\"" + button_id +
   "\" data-icon=\"" + button_icon + "\" data-inline=\"true\" " +
-  "onclick=\"update_rating(" + item.item_id + "); return false;\">" +
+  "onclick=\"" +
+    "update_rating(" +
+      item.item_id + ",'" + slider_id + "','" + button_id + "');" +
+    "return false;\">" +
 button_text +
 "</a>" +
 "</div>" +
 "</div>";
     }
-    if (html != "") {
-        document.getElementById("rating_list").innerHTML = html;
-        $("#rating_list").enhanceWithin();
-
-        // show the rating section div
-        $("#rating_section").show();
-    }
-    else {
-        // hide the rating section div
-        $("#rating_section").hide();
-    }
+    return html;
 }
 
 function websocket_send(data_object) {
@@ -370,9 +381,8 @@ function websocket_send(data_object) {
 $(document).ready(function () {
     console.log("loaded, running javascript...");
 
-//XXX
-$("#rating_section").hide();
-$("#recommendation_section").hide();
+    $("#item_list_content").hide();
+    $("#recommendation_list_content").hide();
 
     // get the user data from HTML5 storage if it has been stored
     var user_id = "1";
@@ -454,11 +464,10 @@ $("#recommendation_section").hide();
         console.log("websocket received: " + data);
         switch (data_object.message_name) {
             case "recommendation_update":
-                display_connection_status("Rating saved");
+                display_recommendation_list(data_object);
                 break;
             case "recommendation_list":
-                display_connection_status("Displaying data");
-                display_connection_status("");
+                display_recommendation_list(data_object);
                 break;
             case "recommendation_refresh":
                 break;

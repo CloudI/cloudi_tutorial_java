@@ -82,8 +82,8 @@ public class LenskitData
     {
         PreparedStatement select = null;
         ResultSet select_result = null;
-        LinkedList<JSONItem> output = new LinkedList<JSONItem>();
         boolean db_failure = false;
+        LinkedList<JSONItem> output = new LinkedList<JSONItem>();
         try
         {
             // select all items with the user's ratings
@@ -171,11 +171,6 @@ public class LenskitData
             return JSONItemListResponse.failure("db", user_id,
                                                 language, subject);
         }
-        else if (output == null)
-        {
-            return JSONItemListResponse.failure("db", user_id,
-                                                language, subject);
-        }
         else
         {
             return JSONItemListResponse.success(user_id,
@@ -187,8 +182,8 @@ public class LenskitData
     {
         Statement select = null;
         ResultSet select_result = null;
-        LinkedList<JSONLanguage> output = new LinkedList<JSONLanguage>();
         boolean db_failure = false;
+        LinkedList<JSONLanguage> output = new LinkedList<JSONLanguage>();
         try
         {
             // select all items with the user's ratings
@@ -223,10 +218,6 @@ public class LenskitData
         {
             return JSONLanguageListResponse.failure("db");
         }
-        else if (output == null)
-        {
-            return JSONLanguageListResponse.failure("db");
-        }
         else
         {
             return JSONLanguageListResponse.success(output);
@@ -237,8 +228,8 @@ public class LenskitData
     {
         Statement select = null;
         ResultSet select_result = null;
-        LinkedList<JSONSubject> output = new LinkedList<JSONSubject>();
         boolean db_failure = false;
+        LinkedList<JSONSubject> output = new LinkedList<JSONSubject>();
         try
         {
             // select all items with the user's ratings
@@ -270,10 +261,6 @@ public class LenskitData
             Database.close(select);
         }
         if (db_failure)
-        {
-            return JSONSubjectListResponse.failure("db");
-        }
-        else if (output == null)
         {
             return JSONSubjectListResponse.failure("db");
         }
@@ -351,30 +338,106 @@ public class LenskitData
     private final List<JSONRecommendation> recommend(final Connection db,
                                                      final long user_id)
     {
+        PreparedStatement select = null;
+        ResultSet select_result = null;
+        boolean lenskit_failure = false;
+        LinkedList<JSONRecommendation> output =
+            new LinkedList<JSONRecommendation>();
         try
         {
             // based on http://lenskit.org/documentation/basics/getting-started/
             final LenskitRecommender session = this.recommenderSession(db);
             final ItemRecommender items = session.getItemRecommender();
             List<ScoredId> recommendations = items.recommend(user_id, 10);
-            RatingPredictor rating = session.getRatingPredictor();
-            LinkedList<JSONRecommendation> output =
-                new LinkedList<JSONRecommendation>();
-
+            StringBuffer query = new StringBuffer();
+            query.append(
+                "SELECT items.id AS item_id, " +
+                       "items.creator, " +
+                       "items.creator_link, " +
+                       "items.title, " +
+                       "items.date_created, " +
+                       "items.languages, " +
+                       "items.subjects, " +
+                       "items.downloads, " +
+                       "ratings.rating "+
+                "FROM items LEFT JOIN " +
+                "(SELECT * FROM ratings WHERE user_id = ?) AS ratings " +
+                "ON items.id = ratings.item_id " +
+                "WHERE false ");
             for (ScoredId recommendation : recommendations)
             {
-                final long item_id = recommendation.getId();
-                final double rating_expected = rating.predict(user_id,
-                                                              item_id);
+                query.append("OR items.id = '");
+                query.append(Long.toString(recommendation.getId()));
+                query.append("' ");
+            }
+            query.append(
+                "ORDER BY items.date_created DESC, items.title ASC");
+            select = db.prepareStatement(query.toString());
+            select.setLong(1, user_id);
+            select_result = select.executeQuery();
+            RatingPredictor recommendations_rating =
+                session.getRatingPredictor();
+            while (select_result.next())
+            {
+                final long item_id =
+                    select_result.getLong("item_id");
+                final String creator =
+                    select_result.getString("creator");
+                final String creator_link =
+                    select_result.getString("creator_link");
+                final String title =
+                    select_result.getString("title");
+                final String date_created =
+                    select_result.getString("date_created");
+                final String[] languages = (String[])
+                    select_result.getArray("languages")
+                                 .getArray();
+                final String[] subjects = (String[])
+                    select_result.getArray("subjects")
+                                 .getArray();
+                final Integer downloads = (Integer)
+                    select_result.getObject("downloads");
+                final Double rating = (Double)
+                    select_result.getObject("rating");
+                double rating_expected =
+                    recommendations_rating.predict(user_id, item_id);
+                rating_expected = Math.round(rating_expected /
+                                             LenskitData.RATING_STEP) *
+                                  LenskitData.RATING_STEP;
                 output.addLast(new JSONRecommendation(item_id,
+                                                      creator,
+                                                      creator_link,
+                                                      title,
+                                                      date_created,
+                                                      languages,
+                                                      subjects,
+                                                      downloads,
+                                                      rating,
                                                       rating_expected));
             }
-            return output;
+        }
+        catch (SQLException e)
+        {
+            Database.printSQLException(e, Main.err);
+            lenskit_failure = true;
         }
         catch (Exception e)
         {
             e.printStackTrace(Main.err);
+            lenskit_failure = true;
+        }
+        finally
+        {
+            Database.close(select_result);
+            Database.close(select);
+        }
+        if (lenskit_failure)
+        {
             return null;
+        }
+        else
+        {
+            return output;
         }
     }
 
