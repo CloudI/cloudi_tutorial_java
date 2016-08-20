@@ -21,7 +21,8 @@
     <h1>CloudI Java Tutorial</h1>
    </div>
    <!-- end header -->
-   <form name="recommendation_form" id="recommendation_form">
+   <form name="recommendation_form" id="recommendation_form"
+         onsubmit="return false;">
     <div class="ui-field-contain">
      <label for="user_id">user_id </label>
      <input type="text" name="user_id" id="user_id" value="" />
@@ -40,6 +41,13 @@
     </div>
     <!-- start of content -->
     <div data-role="content" data-theme="b">
+     <!-- display recommendations -->
+     <div name="recommendation_section" id="recommendation_section">
+      <p>You might also like:</p>
+      <ul name="recommendation_list" id="recommendation_list"
+          data-role="listview" data-inset="true">
+      </ul>
+     </div>
      <!-- display rating list -->
      <div name="rating_section" id="rating_section">
       <p>
@@ -48,13 +56,6 @@
       </p>
       <div name="rating_list" id="rating_list">
       </div> 
-     </div>
-     <!-- display recommendations -->
-     <div name="recommendation_section" id="recommendation_section">
-      <p>You might also like:</p>
-      <ul name="recommendation_list" id="recommendation_list"
-          data-role="listview" data-inset="true">
-      </ul>
      </div>
     </div>
     <!-- end of content -->
@@ -70,7 +71,12 @@
   <!-- end of recommendation page -->
   <script type="text/javascript">
 
+var RATING_MIN = "0.5";
+var RATING_MAX = "5.0";
+var RATING_STEP = "0.5";
+var UPDATE_ITEMS_USER_ID_DELAY = 2000; // milliseconds
 var websocket = undefined;
+var update_items_timer = undefined;
 
 function element_event_send(element, event_name) {
     var standard_browser = document.createEvent;
@@ -145,31 +151,89 @@ function options_update(id, list, field) {
         select.add(option, i);
     }
     // use the old selection as the current selection, if present
-    if (typeof current_i !== undefined) {
+    if (typeof current_i != "undefined") {
         select.selectedIndex = current_i;
     }
     else {
         select.selectedIndex = 0;
     }
-    element_event_send(select, 'change');
+    element_event_send(select, "change");
 }
 
 function options_selected_store(id, field) {
     var select = document.getElementById(id);
     var current = select.options[select.selectedIndex].text;
+    if (current == localStorage[field])
+        return false;
     localStorage[field] = current;
+    return true;
 }
 
-function store_user_id_set() {
-    localStorage["user_id"] = document.getElementById("user_id").value;
+function update_stored_user_id_set() {
+    var user_id = document.getElementById("user_id").value;
+    if (user_id == localStorage.user_id)
+        return;
+    localStorage.user_id = user_id;
+    if (typeof update_items_timer == "undefined") {
+        update_items_timer = setTimeout(update_items,
+                                        UPDATE_ITEMS_USER_ID_DELAY);
+    }
 }
 
-function store_language_set() {
-    options_selected_store("language", "language");
+function update_stored_language_set() {
+    if (! options_selected_store("language", "language"))
+        return;
+    update_items();
 }
 
-function store_subject_set() {
-    options_selected_store("subject", "subject");
+function update_stored_subject_set() {
+    if (! options_selected_store("subject", "subject"))
+        return;
+    update_items();
+}
+
+function update_languages() {
+    var language_list = {
+        message_name: "language_list"
+    }; 
+    websocket_send(language_list);
+}
+
+function update_subjects() {
+    var subject_list = {
+        message_name: "subject_list"
+    }; 
+    websocket_send(subject_list);
+}
+
+function update_items() {
+    if (typeof update_items_timer != "undefined") {
+        clearTimeout(update_items_timer);
+        update_items_timer = undefined;
+    }
+    var item_list = {
+        message_name: "item_list",
+        user_id: localStorage.user_id,
+        language: localStorage.language,
+        subject: localStorage.subject
+    }; 
+    websocket_send(item_list);
+}
+
+function update_rating(item_id) {
+    console.log("update_rating(" + item_id + ")");     
+    var rating = $("#slider" + item_id).val();
+    var recommendation_update = {
+        message_name: "recommendation_update",
+        user_id: localStorage.user_id,
+        item_id: item_id,
+        rating: rating
+    }; 
+    websocket_send(recommendation_update);
+    // change button to "Update" mode
+    $("#button" + item_id).buttonMarkup({icon: "refresh"})
+                          .text("Update")
+                          .trigger("refresh");
 }
 
 function display_connection_status(value) {
@@ -204,13 +268,13 @@ function display_recommendation_list(obj) {
 //        console.log("Item ID = " + item.id);
         var tag =
 "<li><a data-icon=\"arrow-r\" data-iconpos=\"right\" " +
-  "onclick=\"select_item('" + item.item_id + "'); return false;\">" +
+  "onclick=\"select_item(\"" + item.item_id + "\"); return false;\">" +
 item.title +
 "</a></li>";
-        $("#recommendation_list").append(tag).listview('refresh');
+        $("#recommendation_list").append(tag).listview("refresh");
         items_found = true;
     }
-    if (items_found == true) {
+    if (items_found) {
         // show the recommendation section div
         $("#recommendation_section").show();
     }
@@ -220,51 +284,67 @@ item.title +
     }
 }
 
-function select_rating(item_id) {
-    console.log("select_rating(" + item_id + ")");     
-    var user_id = document.getElementById("user_id").value;
-    var rating = $("#slider" + item_id).val();
-    var recommendation_update = {
-        message_name: "recommendation_update",
-        user_id: user_id,
-        item_id: item_id,
-        rating: rating
-    }; 
-    websocket_send(recommendation_update);
-}
-
 function display_item_list(obj) {
-    console.log("display_items_list()");
-
     // add items to the list
-    var items_found = false;
-    $.each(obj.items, function (i, item) {
-        //console.log("Item ID = " + item.id);
+    var html = "";
+    var i;
+    var list = obj.items;
+    for (i = 0; i < list.length; i++) {
+        var item = list[i];
+        //console.log("Item ID = " + item.item_id);
 
-        var slider_id = "slider" + item.id;
-        var tag =
+        var slider_id = "slider" + item.item_id;
+        var button_id = "button" + item.item_id;
+        var html_creator;
+        if (item.creator_link != null) {
+            html_creator =
+"<a href=\"" + item.creator_link + "\" target=\"_blank\">" +
+item.creator +
+"</a>";
+        }
+        else {
+            html_creator = item.creator;
+        }
+        var button_icon;
+        var button_text;
+        var rating;
+        if (item.rating != null) {
+            button_icon = "refresh";
+            button_text = "Update";
+            rating = item.rating;
+        }
+        else {
+            button_icon = "check";
+            button_text = "Rate";
+            rating = RATING_MIN;
+        }
+        html +=
 "<div class=\"ui-field-contain\">" +
 "<div data-role=\"rangeslider\">" +
-"<label for=\"" + slider_id + "\">" + item.title + "</label>" +
-"<input class=\"myslide\" type=\"range\" name=\""  + slider_id +
-  "\" id=\"" + slider_id + "\" value=\"" + item.rating +
-  "\" min=\"0.5\" max=\"5.0\" " +
-  "data-highlight=\"true\" data-id=\"" + item.id + "\" data-mini=\"true\" />" +
+"<label for=\"" + slider_id + "\">" +
+"<a href=\"http://www.gutenberg.org/ebooks/" + item.item_id +
+  "\" target=\"_blank\">" + item.title + "</a><br />" +
+"by&nbsp;" + html_creator + "<br />" +
+"(added&nbsp;on&nbsp;" + item.date_created + ")" +
+"</label>" +
+"<input type=\"range\" name=\""  + slider_id + "\" id=\"" + slider_id +
+  "\" value=\"" + rating +
+  "\" min=\"" + RATING_MIN + "\" max=\"" + RATING_MAX +
+  "\" step=\"" + RATING_STEP +
+  "\" data-highlight=\"true\" data-id=\"" + item.item_id +
+  "\" data-mini=\"true\" />" +
 "</div>" +
 "<div data-role=\"fieldcontain\">" +
-"<input type=\"button\" value=\"Rate\" id=\"btn" + item.id +
-  "\" data-icon=\"check\" data-inline=\"true\" " +
-  "onclick=\"select_rating(" + item.id + "); return false;\" />" +
+"<a data-role=\"button\" id=\"" + button_id +
+  "\" data-icon=\"" + button_icon + "\" data-inline=\"true\" " +
+  "onclick=\"update_rating(" + item.item_id + "); return false;\">" +
+button_text +
+"</a>" +
 "</div>" +
 "</div>";
-        console.log("tag=" + tag);
-return;
-
-        $("#rating_list").append(tag);
-        items_found=true;
-    });
-    if (items_found == true) {
-        // ask the DIV to apply the correct style to the new sliders
+    }
+    if (html != "") {
+        document.getElementById("rating_list").innerHTML = html;
         $("#rating_list").enhanceWithin();
 
         // show the rating section div
@@ -298,24 +378,24 @@ $("#recommendation_section").hide();
     var user_id = "1";
     var language = "en";
     var subject = "Philosophy";
-    if (typeof Storage !== "undefined") {
+    if (typeof Storage != "undefined") {
         // Web Storage support available
         var user_id_stored = localStorage.user_id;
-        if (typeof user_id_stored == 'string') {
+        if (typeof user_id_stored == "string") {
             user_id = user_id_stored;
         }
         else {
             localStorage.user_id = user_id;
         }
         var language_stored = localStorage.language;
-        if (typeof language_stored == 'string') {
+        if (typeof language_stored == "string") {
             language = language_stored;
         }
         else {
             localStorage.language = language;
         }
         var subject_stored = localStorage.subject;
-        if (typeof subject_stored == 'string') {
+        if (typeof subject_stored == "string") {
             subject = subject_stored;
         }
         else {
@@ -337,7 +417,7 @@ $("#recommendation_section").hide();
     var host = "127.0.0.1";
     var port = "8080";
     var service_name = "/tutorial/java/service/client";
-    if (typeof WebSocket !== "function") {
+    if (typeof WebSocket != "function") {
         alert("WebSocket support is required!");
         return;
     }
@@ -348,40 +428,22 @@ $("#recommendation_section").hide();
     websocket.onopen = function() {
         console.log("websocket connected");
         display_connection_status("Connected");
+        update_languages();
+        update_subjects();
+        update_items();
 
-        // update the language selection options
-        var language_list = {
-            message_name: "language_list"
-        }; 
-        websocket_send(language_list);
-
-        // update the subject selection options
-        var subject_list = {
-            message_name: "subject_list"
-        }; 
-        websocket_send(subject_list);
-
-        // add local storage events
+        // add update events
         element_event_handler_add(document.getElementById("user_id"),
-                                  "input", store_user_id_set);
+                                  "input", update_stored_user_id_set);
         element_event_handler_add(document.getElementById("language"),
-                                  "change", store_language_set);
+                                  "change", update_stored_language_set);
         element_event_handler_add(document.getElementById("subject"),
-                                  "change", store_subject_set);
-/*XXX
-        var user_id = document.getElementById("user_id").value;
-        var item_list = {
-            message_name: "item_list",
-            user_id: user_id,
-            language: language
-        }; 
-        //websocket_send(item_list);
-        */
+                                  "change", update_stored_subject_set);
     };
     websocket_message = function (data) {
         var data_object = JSON.parse(data);
         if (data_object.success !== true) {
-            if (typeof data_object.error === "string") {
+            if (typeof data_object.error == "string") {
                 console.log("websocket error: " + data_object.error);
             }
             else {
@@ -437,13 +499,13 @@ $("#recommendation_section").hide();
         websocket = undefined;
         console.log("websocket disconnected");
         display_connection_status("Disconnected");
-        // remove local storage events
+        // remove update events
         element_event_handler_remove(document.getElementById("user_id"),
-                                     "input");
+                                     "input", update_stored_user_id_set);
         element_event_handler_remove(document.getElementById("language"),
-                                     "change");
+                                     "change", update_stored_language_set);
         element_event_handler_remove(document.getElementById("subject"),
-                                     "change");
+                                     "change", update_stored_subject_set);
     };
 });
 

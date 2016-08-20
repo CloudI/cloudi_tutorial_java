@@ -45,6 +45,7 @@ public class LenskitData
 {
     public static final double RATING_MIN = 0.5;
     public static final double RATING_MAX = 5.0;
+    public static final double RATING_STEP = 0.5;
 
     private final LenskitRecommenderEngine engine;
 
@@ -111,7 +112,7 @@ public class LenskitData
                 "WHERE " +
                 "? = ANY (items.languages) " +
                 subject_query +
-                "ORDER BY items.date_created DESC");
+                "ORDER BY items.date_created DESC, items.title ASC");
             select.setLong(1, user_id);
             select.setString(2, language);
             if (subject != null)
@@ -405,7 +406,8 @@ public class LenskitData
         // (the default is to not clamp)
         config.bind(PreferenceDomain.class)
               .to(new PreferenceDomain(LenskitData.RATING_MIN,
-                                       LenskitData.RATING_MAX, 0.5));
+                                       LenskitData.RATING_MAX,
+                                       LenskitData.RATING_STEP));
         // explicit default configuration values
         config.set(NeighborhoodSize.class).to(20);     // default
         config.set(MinNeighbors.class).to(1);          // default
@@ -414,8 +416,6 @@ public class LenskitData
 
         config.set(SimilarityDamping.class).to(0.0);   // default
         config.set(ThresholdValue.class).to(0.0);      // default
-        //config.bind(ItemSimilarityThreshold.class)
-        //      .to(AbsoluteThreshold.class);            // default
         config.within(ItemSimilarity.class)
               .bind(VectorSimilarity.class)
               .to(CosineVectorSimilarity.class);       // default
