@@ -328,13 +328,13 @@ function item_refresh_response(obj) {
     }
 }
 
-function item_refreshed_notification(obj) {
+function item_refresh_occurred_notification(obj) {
     if (item_refresh_pending) {
         $("#item_refresh").buttonMarkup({icon: "refresh"})
                           .trigger("refresh");
         item_refresh_pending = false;
     }
-    websocket_send({}); // response required, i.e., transactional
+    websocket_send({}); // notification response required, i.e., transactional
     if (obj.success) {
         item_list_request();
     }
@@ -557,8 +557,8 @@ $(document).ready(function () {
                     case "item_refresh":
                         item_refresh_response(data_object);
                         break;
-                    case "item_refreshed":
-                        item_refreshed_notification(data_object);
+                    case "item_refresh_occurred":
+                        item_refresh_occurred_notification(data_object);
                         break;
                     case "recommendation_refresh":
                         recommendation_refresh_response(data_object);
@@ -580,8 +580,8 @@ $(document).ready(function () {
             case "item_refresh":
                 item_refresh_response(data_object);
                 break;
-            case "item_refreshed":
-                item_refreshed_notification(data_object);
+            case "item_refresh_occurred":
+                item_refresh_occurred_notification(data_object);
                 break;
             case "language_list":
                 language_list_response(data_object);

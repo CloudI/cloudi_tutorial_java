@@ -31,13 +31,13 @@ public class GutenbergRefreshDone implements ServiceIdle.Callable
         byte[] notification;
         if (this.success)
         {
-            notification = JSONItemRefreshedNotification.success()
-                                                        .toString().getBytes();
+            notification = JSONItemRefreshOccurredNotification
+                .success().toString().getBytes();
         }
         else
         {
-            notification = JSONItemRefreshedNotification.failure(this.error)
-                                                        .toString().getBytes();
+            notification = JSONItemRefreshOccurredNotification
+                .failure(this.error).toString().getBytes();
         }
         final String name_websockets = api.prefix() + "client/websocket";
         try
