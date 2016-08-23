@@ -1,2 +1,0 @@
-Class-Path: /usr/local/lib/cloudi-1.5.0/api/java/cloudi.jar
-
