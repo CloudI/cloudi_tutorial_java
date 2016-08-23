@@ -329,8 +329,8 @@ function item_refreshed_notification(obj) {
         $("#item_refresh").buttonMarkup({icon: "refresh"})
                           .trigger("refresh");
         item_refresh_pending = false;
-        websocket_send({}); // response required, i.e., transactional
     }
+    websocket_send({}); // response required, i.e., transactional
     if (obj.success) {
         item_list_request();
     }
