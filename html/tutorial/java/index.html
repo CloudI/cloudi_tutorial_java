@@ -4,10 +4,8 @@
   <title>CloudI Java Tutorial</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="css/themes/Vines.css" />
-  <link rel="stylesheet" href="css/themes/jquery.mobile.icons.min.css" />
-  <!-- http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.min.css -->
-  <link rel="stylesheet" href="css/jquery.mobile.structure-1.4.5.min.css" />
+  <!-- http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css -->
+  <link rel="stylesheet" href="css/jquery.mobile-1.4.5.min.css" />
   <!-- http://code.jquery.com/jquery-1.11.1.min.js -->
   <script type="text/javascript" src="js/jquery-1.11.1.min.js"></script>
   <!-- http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js -->
@@ -23,42 +21,48 @@
    <!-- end header -->
    <form name="recommendation_form" id="recommendation_form"
          onsubmit="return false;">
-    <div class="ui-field-contain">
-     <label for="user_id">user_id </label>
-     <input type="text" name="user_id" id="user_id" value="" />
-     <label for="language">language </label>
-     <select name="language" id="language">
-      <option value="0" selected></option>
-     </select>
-     <label for="subject">subject </label>
-     <select name="subject" id="subject">
-      <option value="0" selected></option>
-     </select>
-     <a data-role="button" id="item_refresh"
-        data-icon="refresh" data-inline="true"
-        onclick="item_refresh_request(); return false;">
-      Refresh gutenberg.org Items
-     </a>
-     <a data-role="button" id="recommendation_refresh"
-        data-icon="refresh" data-inline="true"
-        onclick="recommendation_refresh_request(); return false;">
-      Refresh Recommendation Model
-     </a>
-    </div>
     <!-- start of content -->
-    <div data-role="content" data-theme="b">
+    <div data-role="content" data-theme="a">
+     <!-- controls -->
+     <div class="ui-field-contain">
+      <label for="user_id">user_id </label>
+      <input type="text" name="user_id" id="user_id" value="" />
+     </div>
+     <div class="ui-field-contain">
+      <label for="language">language </label>
+      <select name="language" id="language">
+       <option value="0" selected></option>
+      </select>
+     </div>
+     <div class="ui-field-contain">
+      <label for="subject">subject </label>
+      <select name="subject" id="subject">
+       <option value="0" selected></option>
+      </select>
+     </div>
+     <div class="ui-field-contain">
+      <a data-role="button" id="item_refresh"
+         data-icon="refresh" data-inline="true"
+         onclick="item_refresh_request(); return false;">
+       Refresh gutenberg.org Items
+      </a>
+      <a data-role="button" id="recommendation_refresh"
+         data-icon="refresh" data-inline="true"
+         onclick="recommendation_refresh_request(); return false;">
+       Refresh Recommendation Model
+      </a>
+     </div>
      <!-- display recommendations -->
-     <div name="recommendation_list_content" id="recommendation_list_content">
-      <p>You might also like:</p>
+     <div name="recommendation_list_content" id="recommendation_list_content"
+          style="border:2px solid red; padding: 4px; margin-bottom: 40px;">
+      <h2>Recommendations Based On Previous Ratings</h2>
       <div name="recommendation_list" id="recommendation_list">
       </div>
      </div>
      <!-- display rating list -->
-     <div name="item_list_content" id="item_list_content">
-      <p>
-       Please rate the following items on a scale from 0.5 to 5
-       with 5 being highest
-      </p>
+     <div name="item_list_content" id="item_list_content"
+          style="border:2px solid green; padding: 4px;">
+      <h2>Items Available</h2>
       <div name="item_list" id="item_list">
       </div> 
      </div>
