@@ -319,8 +319,12 @@ function item_refresh_request() {
 }
 
 function item_refresh_response(obj) {
-    if (! (obj.success || obj.error == "pending")) {
-        alert("item_refresh Failed!");
+    if (! obj.success) {
+        $("#item_refresh").buttonMarkup({icon: "refresh"})
+                          .trigger("refresh");
+        item_refresh_pending = false;
+        alert("item_refresh error: " + obj.error);
+        return;
     }
 }
 
@@ -545,6 +549,7 @@ $(document).ready(function () {
                                   "change", update_stored_subject_set);
     };
     websocket_message = function (data) {
+        console.log("websocket received: " + data);
         var data_object = JSON.parse(data);
         if (data_object.success !== true) {
             if (typeof data_object.error == "string") {
@@ -568,7 +573,6 @@ $(document).ready(function () {
             }
             return;
         }
-        console.log("websocket received: " + data);
         switch (data_object.message_name) {
             case "item_list":
                 item_list_response(data_object);
