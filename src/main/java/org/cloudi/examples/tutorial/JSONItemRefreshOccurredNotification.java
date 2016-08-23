@@ -4,16 +4,19 @@ package org.cloudi.examples.tutorial;
 
 public class JSONItemRefreshOccurredNotification extends JSONResponse
 {
-    public static final String message_name_valid = "item_refresh_occurred";
+    public static final String message_name_valid =
+        "item_refresh_occurred";
 
-    public static JSONItemRefreshOccurredNotification success()
+    public static JSONItemRefreshOccurredNotification
+        success()
     {
         return new JSONItemRefreshOccurredNotification(true, null);
     }
 
-    public static JSONItemRefreshOccurredNotification failure(final String err)
+    public static JSONItemRefreshOccurredNotification
+        failure(final String error)
     {
-        return new JSONItemRefreshOccurredNotification(false, err);
+        return new JSONItemRefreshOccurredNotification(false, error);
     }
 
     private JSONItemRefreshOccurredNotification(final boolean success,

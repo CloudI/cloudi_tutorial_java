@@ -475,6 +475,8 @@ public class Service implements Runnable
                 // all OS processes need to refresh their lenskit data
                 final String name_recommendation_refresh =
                     this.api.prefix() + "recommendation/refresh/post";
+                final String name_websockets =
+                    this.api.prefix() + "client/websocket";
                 final int refresh_response_latency_max = 1000; // milliseconds
                 final int refresh_request_timeout = Math.max(0,
                     timeout - refresh_response_latency_max);
@@ -516,6 +518,11 @@ public class Service implements Runnable
                         }
                         else if (! refresh_requests_iterator.hasNext())
                         {
+                            byte[] notification =
+                                JSONRecommendationRefreshOccurredNotification
+                                    .success().toString().getBytes();
+                            this.api.mcast_async(name_websockets,
+                                                 notification);
                             return refresh_response.response; // last success
                         }
                         else

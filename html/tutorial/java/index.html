@@ -324,11 +324,11 @@ function item_refresh_response(obj) {
                           .trigger("refresh");
         item_refresh_pending = false;
         alert("item_refresh error: " + obj.error);
-        return;
     }
 }
 
 function item_refresh_occurred_notification(obj) {
+    var item_refresh_caused = item_refresh_pending;
     if (item_refresh_pending) {
         $("#item_refresh").buttonMarkup({icon: "refresh"})
                           .trigger("refresh");
@@ -338,7 +338,7 @@ function item_refresh_occurred_notification(obj) {
     if (obj.success) {
         item_list_request();
     }
-    else {
+    else if (item_refresh_caused) {
         alert("item_refresh Failed!");
     }
 }
@@ -413,12 +413,14 @@ function recommendation_refresh_response(obj) {
     $("#recommendation_refresh").buttonMarkup({icon: "refresh"})
                                 .trigger("refresh");
     recommendation_refresh_pending = false;
-    if (obj.success) {
-        recommendation_list_request();
-    }
-    else {
+    if (! obj.success) {
         alert("recommendation_refresh Failed!");
     }
+}
+
+function recommendation_refresh_occurred_notification(obj) {
+    websocket_send({}); // notification response required, i.e., transactional
+    recommendation_list_request();
 }
 
 function recommendation_list_request() {
@@ -597,6 +599,9 @@ $(document).ready(function () {
                 break;
             case "recommendation_refresh":
                 recommendation_refresh_response(data_object);
+                break;
+            case "recommendation_refresh_occurred":
+                recommendation_refresh_occurred_notification(data_object);
                 break;
             default:
                 console.log("websocket message \"" +
