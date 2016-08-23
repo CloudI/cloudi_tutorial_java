@@ -16,6 +16,7 @@ public class Service implements Runnable
     private Future<?> item_refresh_pending;
     private final int thread_index;
     private API api;
+    private final ServiceIdle idle;
     private static LenskitData lenskit_instance;
 
     public Service(final int thread_index)
@@ -42,6 +43,7 @@ public class Service implements Runnable
             Main.error(this, "terminate before initialization");
             System.exit(1);
         }
+        this.idle = new ServiceIdle(this.api);
     }
 
     public static LenskitData lenskit()
@@ -135,8 +137,12 @@ public class Service implements Runnable
             }
 
             Main.info(this, "initialization end");
-            Object result = this.api.poll(); // accept service requests
-            assert result == Boolean.FALSE;  // poll did not timeout
+            // accept service requests
+            while (this.api.poll(ServiceIdle.INTERVAL) == Boolean.TRUE)
+            {
+                // execute ServiceIdle function objects
+                this.idle.check();
+            }
         }
         catch (API.TerminateException e)
         {
@@ -193,7 +199,8 @@ public class Service implements Runnable
         }
         // refresh may take a long time and can be done asynchronously
         this.item_refresh_pending = this.item_refresh_executor.submit(
-            new GutenbergRefresh(db,
+            new GutenbergRefresh(this.idle,
+                                 db,
                                  executable_download,
                                  executable_cleanup,
                                  directory));

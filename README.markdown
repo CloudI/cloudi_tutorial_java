@@ -104,5 +104,5 @@ Refresh the list of items with the books available at [gutenberg.org](http://www
 
 Update the recommendations model (public services often do this daily or weekly, but this can be done more frequently):
 
-    curl -X POST -d '{"message_name": "recommendation_refresh", "user_id": 1}' http://localhost:8080/tutorial/java/service/recommendation/refresh
+    curl -X POST -d '{"message_name": "recommendation_refresh"}' http://localhost:8080/tutorial/java/service/recommendation/refresh
 

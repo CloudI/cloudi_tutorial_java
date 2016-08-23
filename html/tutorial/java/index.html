@@ -26,18 +26,24 @@
     <div class="ui-field-contain">
      <label for="user_id">user_id </label>
      <input type="text" name="user_id" id="user_id" value="" />
-    </div>
-    <div class="ui-field-contain">
      <label for="language">language </label>
      <select name="language" id="language">
       <option value="0" selected></option>
      </select>
-    </div>
-    <div class="ui-field-contain">
      <label for="subject">subject </label>
      <select name="subject" id="subject">
       <option value="0" selected></option>
      </select>
+     <a data-role="button" id="item_refresh"
+        data-icon="refresh" data-inline="true"
+        onclick="item_refresh_request(); return false;">
+      Refresh gutenberg.org Items
+     </a>
+     <a data-role="button" id="recommendation_refresh"
+        data-icon="refresh" data-inline="true"
+        onclick="recommendation_refresh_request(); return false;">
+      Refresh Recommendation Model
+     </a>
     </div>
     <!-- start of content -->
     <div data-role="content" data-theme="b">
@@ -76,6 +82,8 @@ var RATING_STEP = "0.5";
 var UPDATE_USER_ID_TIMER_DELAY = 2000; // milliseconds
 var websocket = undefined;
 var update_user_id_timer = undefined;
+var item_refresh_pending = false;
+var recommendation_refresh_pending = false;
 
 function element_event_send(element, event_name) {
     var standard_browser = document.createEvent;
@@ -174,7 +182,7 @@ function update_stored_user_id_set() {
         return;
     }
     else if (user_id !== "" + parseInt(user_id, 10)) {
-        alert("user_id is an integer value! (a Java long)");
+        alert("user_id is an integer value! (Java long)");
         return;
     }
     else if (user_id == localStorage.user_id) {
@@ -183,8 +191,8 @@ function update_stored_user_id_set() {
     localStorage.user_id = user_id;
     if (typeof update_user_id_timer == "undefined") {
         var update_function = function() {
-            update_recommendations();
-            update_items();
+            recommendation_list_request();
+            item_list_request();
             update_user_id_timer = undefined;
         };
         update_user_id_timer = setTimeout(update_function,
@@ -197,7 +205,7 @@ function update_stored_language_set() {
         return;
     else if (typeof update_user_id_timer != "undefined")
         return;
-    update_items();
+    item_list_request();
 }
 
 function update_stored_subject_set() {
@@ -205,92 +213,12 @@ function update_stored_subject_set() {
         return;
     else if (typeof update_user_id_timer != "undefined")
         return;
-    update_items();
+    item_list_request();
 }
 
-function update_languages() {
-    var language_list = {
-        message_name: "language_list"
-    }; 
-    websocket_send(language_list);
-}
-
-function update_subjects() {
-    var subject_list = {
-        message_name: "subject_list"
-    }; 
-    websocket_send(subject_list);
-}
-
-function update_items() {
-    var item_list = {
-        message_name: "item_list",
-        user_id: localStorage.user_id,
-        language: localStorage.language,
-        subject: localStorage.subject
-    }; 
-    websocket_send(item_list);
-}
-
-function update_recommendations() {
-    var recommendation_list = {
-        message_name: "recommendation_list",
-        user_id: localStorage.user_id
-    }; 
-    websocket_send(recommendation_list);
-}
-
-function update_rating(item_id, slider_id, button_id) {
-    // change button to "Update" mode
-    $("#" + button_id).buttonMarkup({icon: "refresh"})
-                      .text("Update")
-                      .trigger("refresh");
-    // update rating value
-    var rating = $("#" + slider_id).val();
-    var recommendation_update = {
-        message_name: "recommendation_update",
-        user_id: localStorage.user_id,
-        item_id: item_id,
-        rating: rating
-    }; 
-    websocket_send(recommendation_update);
-}
-
-function display_connection_status(value) {
+function connection_status_set(value) {
     var p = document.getElementById("connection_status");
     p.innerHTML = value;
-}
-
-function display_language_list(obj) {
-    options_update("language", obj.languages, "language");
-}
-
-function display_subject_list(obj) {
-    options_update("subject", obj.subjects, "subject");
-}
-
-function display_recommendation_list(obj) {
-    html = html_item_list(obj.recommendations);
-    if (html != "") {
-        document.getElementById("recommendation_list").innerHTML = html;
-        $("#recommendation_list").enhanceWithin();
-        $("#recommendation_list_content").show();
-    }
-    else {
-        $("#recommendation_list_content").hide();
-    }
-}
-
-function display_item_list(obj) {
-    html = html_item_list(obj.items);
-    if (html != "") {
-        document.getElementById("item_list").innerHTML = html;
-        $("#item_list").enhanceWithin();
-        $("#item_list_content").show();
-    }
-    else {
-        $("#item_list_content").hide();
-    }
 }
 
 function html_item_list(list) {
@@ -364,7 +292,7 @@ html_language_subject +
 "<a data-role=\"button\" id=\"" + button_id +
   "\" data-icon=\"" + button_icon + "\" data-inline=\"true\" " +
   "onclick=\"" +
-    "update_rating(" +
+    "recommendation_update_request(" +
       item.item_id + ",'" + slider_id + "','" + button_id + "');" +
     "return false;\">" +
 button_text +
@@ -373,6 +301,161 @@ button_text +
 "</div>";
     }
     return html;
+}
+
+function item_refresh_request() {
+    // refresh the current gutenberg.org items stored in the database
+    if (item_refresh_pending) {
+        alert("item_refresh in-progress");
+        return;
+    }
+    item_refresh_pending = true;
+    $("#item_refresh").buttonMarkup({icon: "clock"})
+                      .trigger("refresh");
+    var item_refresh = {
+        message_name: "item_refresh"
+    }; 
+    websocket_send(item_refresh);
+}
+
+function item_refresh_response(obj) {
+    if (! (obj.success || obj.error == "pending")) {
+        alert("item_refresh Failed!");
+    }
+}
+
+function item_refreshed_notification(obj) {
+    $("#item_refresh").buttonMarkup({icon: "refresh"})
+                      .trigger("refresh");
+    item_refresh_pending = false;
+    websocket_send({}); // response required, i.e., transactional
+    if (obj.success) {
+        item_list_request();
+    }
+    else {
+        alert("item_refresh Failed!");
+    }
+}
+
+function item_list_request() {
+    // get the current list of items
+    var item_list = {
+        message_name: "item_list",
+        user_id: localStorage.user_id,
+        language: localStorage.language,
+        subject: localStorage.subject
+    }; 
+    websocket_send(item_list);
+}
+
+function item_list_response(obj) {
+    // display the current list of items
+    html = html_item_list(obj.items);
+    if (html != "") {
+        document.getElementById("item_list").innerHTML = html;
+        $("#item_list").enhanceWithin();
+        $("#item_list_content").show();
+    }
+    else {
+        $("#item_list_content").hide();
+    }
+}
+
+function language_list_request() {
+    // get the list of languages based on the items that exist
+    var language_list = {
+        message_name: "language_list"
+    }; 
+    websocket_send(language_list);
+}
+
+function language_list_response(obj) {
+    // display the current list of languages
+    options_update("language", obj.languages, "language");
+}
+
+function subject_list_request() {
+    // get the list of subjects based on the items that exist
+    var subject_list = {
+        message_name: "subject_list"
+    }; 
+    websocket_send(subject_list);
+}
+
+function subject_list_response(obj) {
+    // display the current list of subjects
+    options_update("subject", obj.subjects, "subject");
+}
+
+function recommendation_refresh_request() {
+    // refresh the lenskit recommendation model
+    if (recommendation_refresh_pending) {
+        alert("recommendation_refresh in-progress");
+        return;
+    }
+    recommendation_refresh_pending = true;
+    $("#recommendation_refresh").buttonMarkup({icon: "clock"})
+                                .trigger("refresh");
+    var recommendation_refresh = {
+        message_name: "recommendation_refresh"
+    }; 
+    websocket_send(recommendation_refresh);
+}
+
+function recommendation_refresh_response(obj) {
+    // use the updated lenskit recommendation model
+    $("#recommendation_refresh").buttonMarkup({icon: "refresh"})
+                                .trigger("refresh");
+    recommendation_refresh_pending = false;
+    if (obj.success) {
+        recommendation_list_request();
+    }
+    else {
+        alert("recommendation_refresh Failed!");
+    }
+}
+
+function recommendation_list_request() {
+    // get the current list of recommendations
+    var recommendation_list = {
+        message_name: "recommendation_list",
+        user_id: localStorage.user_id
+    }; 
+    websocket_send(recommendation_list);
+}
+
+function recommendation_list_response(obj) {
+    // display the current list of recommendations
+    recommendation_update_response(obj);
+}
+
+function recommendation_update_request(item_id, slider_id, button_id) {
+    // change button to "Update" mode
+    $("#" + button_id).buttonMarkup({icon: "refresh"})
+                      .text("Update")
+                      .trigger("refresh");
+    // update rating value and get an updated list of recommendations
+    var rating = $("#" + slider_id).val();
+    var recommendation_update = {
+        message_name: "recommendation_update",
+        user_id: localStorage.user_id,
+        item_id: item_id,
+        rating: rating
+    }; 
+    websocket_send(recommendation_update);
+}
+
+function recommendation_update_response(obj) {
+    // display the current list of recommendations
+    html = html_item_list(obj.recommendations);
+    if (html != "") {
+        document.getElementById("recommendation_list").innerHTML = html;
+        $("#recommendation_list").enhanceWithin();
+        $("#recommendation_list_content").show();
+    }
+    else {
+        $("#recommendation_list_content").hide();
+    }
 }
 
 function websocket_send(data_object) {
@@ -442,14 +525,14 @@ $(document).ready(function () {
     var websocket_url = "ws://" + host + ":" + port + service_name;
     websocket = new WebSocket(websocket_url);
     console.log("websocket connecting to " + websocket_url);
-    display_connection_status("Connecting");
+    connection_status_set("Connecting");
     websocket.onopen = function() {
         console.log("websocket connected");
-        display_connection_status("Connected");
-        update_languages();
-        update_subjects();
-        update_recommendations();
-        update_items();
+        connection_status_set("Connected");
+        language_list_request();
+        subject_list_request();
+        recommendation_list_request();
+        item_list_request();
 
         // add update events
         element_event_handler_add(document.getElementById("user_id"),
@@ -463,7 +546,20 @@ $(document).ready(function () {
         var data_object = JSON.parse(data);
         if (data_object.success !== true) {
             if (typeof data_object.error == "string") {
-                console.log("websocket error: " + data_object.error);
+                switch (data_object.message_name) {
+                    case "item_refresh":
+                        item_refresh_response(data_object);
+                        break;
+                    case "item_refreshed":
+                        item_refreshed_notification(data_object);
+                        break;
+                    case "recommendation_refresh":
+                        recommendation_refresh_response(data_object);
+                        break;
+                    default:
+                        console.log("websocket error: " + data_object.error);
+                        break;
+                }
             }
             else {
                 console.log("websocket invalid message: " + data);
@@ -472,24 +568,29 @@ $(document).ready(function () {
         }
         console.log("websocket received: " + data);
         switch (data_object.message_name) {
-            case "recommendation_update":
-                display_recommendation_list(data_object);
-                break;
-            case "recommendation_list":
-                display_recommendation_list(data_object);
-                break;
-            case "recommendation_refresh":
-                break;
             case "item_list":
-                display_item_list(data_object);
+                item_list_response(data_object);
                 break;
             case "item_refresh":
+                item_refresh_response(data_object);
+                break;
+            case "item_refreshed":
+                item_refreshed_notification(data_object);
                 break;
             case "language_list":
-                display_language_list(data_object);
+                language_list_response(data_object);
                 break;
             case "subject_list":
-                display_subject_list(data_object);
+                subject_list_response(data_object);
+                break;
+            case "recommendation_update":
+                recommendation_update_response(data_object);
+                break;
+            case "recommendation_list":
+                recommendation_list_response(data_object);
+                break;
+            case "recommendation_refresh":
+                recommendation_refresh_response(data_object);
                 break;
             default:
                 console.log("websocket message \"" +
@@ -516,7 +617,7 @@ $(document).ready(function () {
     websocket.onclose = function() {
         websocket = undefined;
         console.log("websocket disconnected");
-        display_connection_status("Disconnected");
+        connection_status_set("Disconnected");
         // remove update events
         element_event_handler_remove(document.getElementById("user_id"),
                                      "input", update_stored_user_id_set);

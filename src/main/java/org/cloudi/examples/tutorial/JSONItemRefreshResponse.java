@@ -2,9 +2,6 @@
 // ex: set ft=java fenc=utf-8 sts=4 ts=4 sw=4 et:
 package org.cloudi.examples.tutorial;
 
-import java.util.List;
-import java.util.LinkedList;
-
 public class JSONItemRefreshResponse extends JSONResponse
 {
     public static JSONItemRefreshResponse success()

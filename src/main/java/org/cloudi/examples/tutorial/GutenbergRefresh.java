@@ -23,6 +23,7 @@ import org.xml.sax.SAXException;
 
 public class GutenbergRefresh implements Runnable
 {
+    private final ServiceIdle idle;
     private final Connection db;
     private final String executable_download;
     private final String executable_cleanup;
@@ -32,11 +33,13 @@ public class GutenbergRefresh implements Runnable
     private boolean cleared;
     private SQLException failure;
 
-    public GutenbergRefresh(Connection db,
+    public GutenbergRefresh(ServiceIdle idle,
+                            Connection db,
                             String executable_download,
                             String executable_cleanup,
                             String directory)
     {
+        this.idle = idle;
         this.db = db;
         this.executable_download = executable_download;
         this.executable_cleanup = executable_cleanup;
@@ -49,10 +52,14 @@ public class GutenbergRefresh implements Runnable
 
     public void run()
     {
+        String error = null;
         try
         {
             if (this.download() != 0)
+            {
+                error = "download";
                 throw new IOException("download failed");
+            }
             SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
             try
             {
@@ -62,6 +69,7 @@ public class GutenbergRefresh implements Runnable
             }
             catch (SQLException e)
             {
+                error = "db";
                 Database.printSQLException(e, Main.err);
                 Database.rollback(this.db);
             }
@@ -71,17 +79,27 @@ public class GutenbergRefresh implements Runnable
                 throw e;
             }
             if (this.cleanup() != 0)
+            {
+                if (error == null)
+                    error = "cleanup";
                 throw new IOException("cleanup failed");
+            }
             Main.info(this, "item_refresh done");
         }
         catch (Exception e)
         {
+            if (error == null)
+                error = "parsing";
             e.printStackTrace(Main.err);
         }
         finally
         {
             Database.close(this.db);
         }
+        if (error == null)
+            this.idle.execute(GutenbergRefreshDone.success());
+        else
+            this.idle.execute(GutenbergRefreshDone.failure(error));
     }
 
     private int download()

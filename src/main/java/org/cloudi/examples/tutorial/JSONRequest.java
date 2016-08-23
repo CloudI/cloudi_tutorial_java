@@ -2,8 +2,6 @@
 // ex: set ft=java fenc=utf-8 sts=4 ts=4 sw=4 et:
 package org.cloudi.examples.tutorial;
 
-import com.google.gson.JsonParseException;
-
 public class JSONRequest
 {
     private String message_name;
