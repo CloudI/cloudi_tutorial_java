@@ -5,7 +5,8 @@ package org.cloudi.examples.tutorial;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.sql.Connection;
 import com.ericsson.otp.erlang.OtpErlangPid;
 import org.cloudi.API;
@@ -197,7 +198,7 @@ public class Service implements Runnable
                 .failure("db")
                 .toString().getBytes();
         }
-        // refresh may take a long time and can be done asynchronously
+        // item_refresh takes a long time, so it is done asynchronously
         this.item_refresh_pending = this.item_refresh_executor.submit(
             new GutenbergRefresh(this.idle,
                                  db,
@@ -474,17 +475,25 @@ public class Service implements Runnable
                 // all OS processes need to refresh their lenskit data
                 final String name_recommendation_refresh =
                     this.api.prefix() + "recommendation/refresh/post";
-                List<API.TransId> refresh_requests =
+                final int refresh_response_latency_max = 1000; // milliseconds
+                final int refresh_request_timeout = Math.max(0,
+                    timeout - refresh_response_latency_max);
+                final ArrayList<API.TransId> refresh_requests =
                     this.api.mcast_async(name_recommendation_refresh,
                                          request_info, request,
-                                         timeout, priority);
+                                         refresh_request_timeout, priority);
                 if (refresh_requests.isEmpty())
-                    return ("").getBytes(); // timeout
-                final int timeout_decrement = 500;
-                API.TransId refresh_request_id = refresh_requests.remove(0);
+                    return JSONRecommendationRefreshResponse
+                        .failure("timeout")
+                        .toString().getBytes();
+                final int timeout_decrement = 500; // milliseconds
+                final Iterator<API.TransId> refresh_requests_iterator =
+                    refresh_requests.iterator();
+                API.TransId refresh_request_id =
+                    refresh_requests_iterator.next();
                 while (timeout > 0)
                 {
-                    API.Response refresh_response =
+                    final API.Response refresh_response =
                         this.api.recv_async(timeout_decrement,
                                             refresh_request_id.id);
                     if (refresh_response.isTimeout())
@@ -503,27 +512,21 @@ public class Service implements Runnable
                                                        .response));
                         if (! refresh_response_json.getSuccess())
                         {
-                            final byte[][] error = {refresh_response
-                                                    .response_info,
-                                                    refresh_response
-                                                    .response};
-                            return error;
+                            return refresh_response.response; // failure
                         }
-                        else if (refresh_requests.isEmpty())
+                        else if (refresh_requests_iterator.hasNext())
                         {
-                            final byte[][] success = {refresh_response
-                                                      .response_info,
-                                                      refresh_response
-                                                      .response};
-                            return success;
+                            return refresh_response.response; // last success
                         }
                         else
                         {
-                            refresh_request_id = refresh_requests.remove(0);
+                            refresh_request_id =
+                                refresh_requests_iterator.next();
                         }
                     }
                 }
-                return ("").getBytes(); // timeout
+                // timeout already occurred, null response
+                return ("").getBytes();
             case JSONRecommendationListRequest.message_name_valid:
                 return this.recommendationList(command, name, pattern,
                                                request_info, request,

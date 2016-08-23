@@ -4,13 +4,12 @@ package org.cloudi.examples.tutorial;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.LinkedList;
-import java.util.List;
 import org.cloudi.API;
 
 public class ServiceIdle
 {
-    public static final int INTERVAL = 1000; // milliseconds
-    public static final int SIZE_MAX = 10;
+    public static final int INTERVAL = 500; // milliseconds
+    public static final int SIZE_MAX = 1000;
     public static final int SIZE_CHUNK = SIZE_MAX / 2;
 
     public static interface Callable
@@ -20,7 +19,7 @@ public class ServiceIdle
 
     public static class Queue
     {
-        private ArrayBlockingQueue<Callable> queue;
+        private final ArrayBlockingQueue<Callable> queue;
 
         public Queue()
         {
@@ -41,7 +40,7 @@ public class ServiceIdle
 
         public LinkedList<Callable> out()
         {
-            LinkedList<Callable> out = new LinkedList<Callable>();
+            final LinkedList<Callable> out = new LinkedList<Callable>();
             this.queue.drainTo(out, ServiceIdle.SIZE_CHUNK);
             return out;
         }
@@ -61,7 +60,7 @@ public class ServiceIdle
         final LinkedList<Callable> idle = this.queue.out();
         while (! idle.isEmpty())
         {
-            Callable o = idle.removeFirst();
+            final Callable o = idle.removeFirst();
             o.call(this.api);
         }
     }
