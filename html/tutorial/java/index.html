@@ -458,9 +458,11 @@ function recommendation_update_response(obj) {
     // display the current list of recommendations
     var recommendation_first = obj.recommendations[0];
     var recommendation_list_focus =
-        typeof recommendation_first != "undefined" &&
-        typeof recommendation_list_first != "undefined" &&
-        recommendation_first.item_id != recommendation_list_first.item_id;
+        (typeof recommendation_list_first == "undefined" &&
+         typeof recommendation_first != "undefined") ||
+        (typeof recommendation_list_first != "undefined" &&
+         typeof recommendation_first != "undefined" &&
+         recommendation_list_first.item_id != recommendation_first.item_id);
     recommendation_list_first = recommendation_first;
     html = html_item_list(obj.recommendations);
     if (html != "") {
