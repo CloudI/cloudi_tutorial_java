@@ -514,7 +514,7 @@ public class Service implements Runnable
                         {
                             return refresh_response.response; // failure
                         }
-                        else if (refresh_requests_iterator.hasNext())
+                        else if (! refresh_requests_iterator.hasNext())
                         {
                             return refresh_response.response; // last success
                         }
