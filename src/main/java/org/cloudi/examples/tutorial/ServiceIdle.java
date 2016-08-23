@@ -8,7 +8,7 @@ import org.cloudi.API;
 
 public class ServiceIdle
 {
-    public static final int INTERVAL = 500; // milliseconds
+    public static final int INTERVAL = 1000; // milliseconds
     public static final int SIZE_MAX = 1000;
     public static final int SIZE_CHUNK = SIZE_MAX / 2;
 

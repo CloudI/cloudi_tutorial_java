@@ -84,6 +84,7 @@ var websocket = undefined;
 var update_user_id_timer = undefined;
 var item_refresh_pending = false;
 var recommendation_refresh_pending = false;
+var recommendation_list_first = undefined;
 
 function element_event_send(element, event_name) {
     var standard_browser = document.createEvent;
@@ -455,11 +456,20 @@ function recommendation_update_request(item_id, slider_id, button_id) {
 
 function recommendation_update_response(obj) {
     // display the current list of recommendations
+    var recommendation_first = obj.recommendations[0];
+    var recommendation_list_focus =
+        typeof recommendation_first != "undefined" &&
+        typeof recommendation_list_first != "undefined" &&
+        recommendation_first.item_id != recommendation_list_first.item_id;
+    recommendation_list_first = recommendation_first;
     html = html_item_list(obj.recommendations);
     if (html != "") {
         document.getElementById("recommendation_list").innerHTML = html;
         $("#recommendation_list").enhanceWithin();
         $("#recommendation_list_content").show();
+        if (recommendation_list_focus) {
+            document.getElementById("recommendation_page").scrollIntoView();
+        }
     }
     else {
         $("#recommendation_list_content").hide();
