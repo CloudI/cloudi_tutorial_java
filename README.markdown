@@ -7,6 +7,7 @@ This repository contains the example source code for the tutorial at
 _link_.  The source code provides local real-time recommendations for
 the electronic books available at
 [Project Gutenberg](http://www.gutenberg.org/).
+
 While the source code is meant to show information related to Java development
 with the Java CloudI API, additional source code dependencies are used:
 
