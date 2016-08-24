@@ -3,7 +3,19 @@
 
 [![Build Status](https://travis-ci.org/CloudI/cloudi_tutorial_java.png)](https://travis-ci.org/CloudI/cloudi_tutorial_java)
 
-The book recommendation system provides a convenient way to browse new electronic books available from Project Gutenberg and provide your own recommendations.
+This repository contains the example source code for the tutorial at
+_link_.  The source code provides local real-time recommendations for
+the electronic books available at
+[Project Gutenberg](http://www.gutenberg.org/).
+While the source code is meant to show information related to Java development
+with the Java CloudI API, additional source code dependencies are used:
+
+* [Lenskit](http://lenskit.org/) for the recommendations in Java
+* [Simple Logging Facade for Java (SLF4J)](http://www.slf4j.org/) to allow Lenskit to use the CloudI log file through stderr (which keeps all the service log output in a single place)
+* [PostgreSQL JDBC Driver](http://search.maven.org/#artifactdetails|org.postgresql|postgresql|9.3-1104-jdbc4|jar) for Java database usage along with [PostgrsSQL](https://www.postgresql.org/) and Lenskit
+* [Gson](https://github.com/google/gson) for JSON serialization in Java
+* [Jcommander](http://jcommander.org/) for command-line parsing in Java of CloudI service configuration arguments
+* [Erlang/OTP jinterface Library](http://erlang.org/doc/apps/jinterface/jinterface_users_guide.html) for CloudI API usage of the Erlang Binary Term Format
 
 BUILD
 -----
@@ -65,6 +77,7 @@ Confirm your PostgreSQL database is setup with values that match the service con
 
 Make sure the database schema is initialized:
 
+    bunzip2 schema.sql.bz2
     psql -h localhost cloudi_tutorial_java cloudi_tutorial_java < schema.sql
 
 
