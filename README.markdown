@@ -12,7 +12,7 @@ While the source code is meant to show information related to Java development
 with the Java CloudI API, additional source code dependencies are used:
 
 * [Lenskit](http://lenskit.org/) for the recommendations in Java
-* [Simple Logging Facade for Java (SLF4J)](http://www.slf4j.org/) to allow Lenskit to use the CloudI log file through stderr (which keeps all the service log output in a single place)
+* [Simple Logging Facade for Java (SLF4J)](http://www.slf4j.org/) to allow Lenskit to use the CloudI log file through stderr (which keeps all the service log output in the `cloudi.log` file)
 * [PostgreSQL JDBC Driver](http://search.maven.org/#artifactdetails|org.postgresql|postgresql|9.3-1104-jdbc4|jar) for Java database usage along with [PostgrsSQL](https://www.postgresql.org/) and Lenskit
 * [Gson](https://github.com/google/gson) for JSON serialization in Java
 * [Jcommander](http://jcommander.org/) for command-line parsing in Java of CloudI service configuration arguments
