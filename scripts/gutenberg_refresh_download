@@ -8,8 +8,8 @@ fi
 DIRECTORY=$1
 mkdir -p $DIRECTORY
 cd $DIRECTORY
-cp `dirname $0`/../rdf-files.tar.bz2 . || exit 1
-#curl -O http://www.gutenberg.org/cache/epub/feeds/rdf-files.tar.bz2
+#cp `dirname $0`/../rdf-files.tar.bz2 . || exit 1 # testing
+curl -O http://www.gutenberg.org/cache/epub/feeds/rdf-files.tar.bz2
 bunzip2 rdf-files.tar.bz2
 tar xf rdf-files.tar
 rm -f rdf-files.tar
