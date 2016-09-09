@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/CloudI/cloudi_tutorial_java.png)](https://travis-ci.org/CloudI/cloudi_tutorial_java)
 
 This repository contains the example source code for the tutorial at
-[https://raw.githubusercontent.com/CloudI/website/master/tutorial_java.html](https://raw.githubusercontent.com/CloudI/website/master/tutorial_java.html).  The source code provides local real-time recommendations for
+[http://cloudi.org/tutorial_java.html](http://cloudi.org/tutorial_java.html).  The source code provides local real-time recommendations for
 the electronic books available at
 [Project Gutenberg](http://www.gutenberg.org/).
 
@@ -21,75 +21,14 @@ with the Java CloudI API, additional source code dependencies are used:
 BUILD
 -----
 
-Use maven and JDK 1.7 (Java 7) to build (and run):
+Use maven and JDK 1.7 or higher (>= Java 7) to build (and run):
 
     mvn clean package
 
-RUN
----
+RUNNING
+-------
 
-To execute the tutorial dynamically, it is necessary to create the CloudI service configuration that specifies both the initialization and fault-tolerance constraints the CloudI service should be executed with (with the proplist format to rely on defaults): 
-
-    export JAVA=`which java`
-    export PWD=`pwd`
-    export USER=`whoami`
-    cat << EOF > website.conf
-    [[{prefix, "/"},
-      {module, cloudi_service_filesystem},
-      {args,
-       [{directory, "$PWD/html/"}]},
-      {dest_refresh, none},
-      {count_process, 4}],
-     [{prefix, "/tutorial/java/"},
-      {module, cloudi_service_http_cowboy},
-      {args,
-       [{port, 8080}, {use_websockets, true}]},
-      {timeout_async, 600000},
-      {timeout_sync, 600000}]]
-    EOF
-    cat << EOF > tutorial.conf
-    [[{prefix, "/tutorial/java/service/"},
-      {file_path, "$JAVA"},
-      {args, "-Dfile.encoding=UTF-8 "
-             "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn "
-             "-server "
-             "-ea:org.cloudi... "
-             "-Xms3g -Xmx3g "
-             "-jar $PWD/target/cloudi_tutorial_java-1.5.1-SNAPSHOT-jar-with-dependencies.jar "
-             "-pgsql_hostname localhost "
-             "-pgsql_port 5432 "
-             "-pgsql_database cloudi_tutorial_java "
-             "-pgsql_username cloudi_tutorial_java "
-             "-pgsql_password cloudi_tutorial_java"},
-      {timeout_init, 600000},
-      {count_thread, 4},
-      {options,
-       [{owner, [{user, "$USER"}]},
-        {directory, "$PWD"}]}]]
-    EOF
-
-
-Confirm your PostgreSQL database is setup with values that match the service configuration:
-
-    psql -U postgres << EOF
-    CREATE DATABASE cloudi_tutorial_java;
-    CREATE USER cloudi_tutorial_java WITH PASSWORD 'cloudi_tutorial_java';
-    GRANT ALL PRIVILEGES ON DATABASE cloudi_tutorial_java to cloudi_tutorial_java;
-    EOF
-
-
-Make sure the database schema is initialized:
-
-    bunzip2 schema.sql.bz2
-    psql -h localhost cloudi_tutorial_java cloudi_tutorial_java < schema.sql
-
-
-To dynamically add the CloudI service configuration that starts the service's execution use:
-
-    curl -X POST -d @website.conf http://localhost:6464/cloudi/api/rpc/services_add.erl
-    curl -X POST -d @tutorial.conf http://localhost:8080/cloudi/api/rpc/services_add.erl
-
-Browse the website at [http://localhost:8080/tutorial/java/](http://localhost:8080/tutorial/java/)
+Refer to the [Java Tutorial](http://cloudi.org/tutorial_java.html#how_do_book_recommendations_occur) for detailed steps.
 
 SERVICE API EXAMPLES
 --------------------
