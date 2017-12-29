@@ -52,7 +52,11 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <mainClass>org.cloudi.examples.tutorial.Main</mainClass>
+
             </manifest>
+            <manifestEntries>
+              <Add-Opens>java.base/java.io</Add-Opens>
+            </manifestEntries>
           </archive>
         </configuration>
         <executions>
