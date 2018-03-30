@@ -1,10 +1,10 @@
-[CloudI](http://cloudi.org) Java Tutorial
+[CloudI](https://cloudi.org) Java Tutorial
 =========================================
 
 [![Build Status](https://travis-ci.org/CloudI/cloudi_tutorial_java.png)](https://travis-ci.org/CloudI/cloudi_tutorial_java)
 
 This repository contains the example source code for the tutorial at
-[http://cloudi.org/tutorial_java.html](http://cloudi.org/tutorial_java.html).  The source code provides local real-time recommendations for
+[https://cloudi.org/tutorial_java.html](https://cloudi.org/tutorial_java.html).  The source code provides local real-time recommendations for
 the electronic books available at
 [Project Gutenberg](http://www.gutenberg.org/).
 
@@ -28,7 +28,7 @@ Use maven and JDK 1.7 or higher (>= Java 7) to build:
 RUNNING
 -------
 
-Refer to the [Java Tutorial](http://cloudi.org/tutorial_java.html#how_do_book_recommendations_occur) for detailed steps.
+Refer to the [Java Tutorial](https://cloudi.org/tutorial_java.html#how_do_book_recommendations_occur) for detailed steps.
 
 SERVICE API EXAMPLES
 --------------------
