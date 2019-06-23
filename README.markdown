@@ -21,7 +21,7 @@ with the Java CloudI API, additional source code dependencies are used:
 BUILD
 -----
 
-Use maven and JDK 1.7 or higher (>= Java 7) to build:
+Use maven and JDK 1.7 or 1.8 (Java 7 or 8) to build:
 
     mvn clean package
 
