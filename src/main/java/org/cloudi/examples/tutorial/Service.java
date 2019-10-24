@@ -160,7 +160,7 @@ public class Service implements Runnable
         Main.info(this, "termination end");
     }
 
-    public Object itemRefresh(Integer command, String name,
+    public Object itemRefresh(Integer request_type, String name,
                               String pattern, byte[] request_info,
                               byte[] request, Integer timeout,
                               Byte priority, byte[] trans_id,
@@ -208,7 +208,7 @@ public class Service implements Runnable
         return JSONItemRefreshResponse.success().toString().getBytes();
     }
 
-    public Object itemList(Integer command, String name,
+    public Object itemList(Integer request_type, String name,
                            String pattern, byte[] request_info,
                            byte[] request, Integer timeout,
                            Byte priority, byte[] trans_id,
@@ -252,7 +252,7 @@ public class Service implements Runnable
         return response_json.toString().getBytes();
     }
 
-    public Object languageList(Integer command, String name,
+    public Object languageList(Integer request_type, String name,
                                String pattern, byte[] request_info,
                                byte[] request, Integer timeout,
                                Byte priority, byte[] trans_id,
@@ -286,7 +286,7 @@ public class Service implements Runnable
         return response_json.toString().getBytes();
     }
 
-    public Object subjectList(Integer command, String name,
+    public Object subjectList(Integer request_type, String name,
                               String pattern, byte[] request_info,
                               byte[] request, Integer timeout,
                               Byte priority, byte[] trans_id,
@@ -320,7 +320,7 @@ public class Service implements Runnable
         return response_json.toString().getBytes();
     }
 
-    public Object recommendationRefresh(Integer command, String name,
+    public Object recommendationRefresh(Integer request_type, String name,
                                         String pattern, byte[] request_info,
                                         byte[] request, Integer timeout,
                                         Byte priority, byte[] trans_id,
@@ -347,7 +347,7 @@ public class Service implements Runnable
             .success().toString().getBytes();
     }
 
-    public Object recommendationUpdate(Integer command, String name,
+    public Object recommendationUpdate(Integer request_type, String name,
                                        String pattern, byte[] request_info,
                                        byte[] request, Integer timeout,
                                        Byte priority, byte[] trans_id,
@@ -388,7 +388,7 @@ public class Service implements Runnable
         return response_json.toString().getBytes();
     }
 
-    public Object recommendationList(Integer command, String name,
+    public Object recommendationList(Integer request_type, String name,
                                      String pattern, byte[] request_info,
                                      byte[] request, Integer timeout,
                                      Byte priority, byte[] trans_id,
@@ -426,7 +426,7 @@ public class Service implements Runnable
         return response_json.toString().getBytes();
     }
 
-    public Object client(Integer command, String name, String pattern,
+    public Object client(Integer request_type, String name, String pattern,
                          byte[] request_info, byte[] request,
                          Integer timeout, Byte priority, byte[] trans_id,
                          OtpErlangPid pid)
@@ -451,23 +451,23 @@ public class Service implements Runnable
                 // a single OS process will refresh the single database
                 final String name_item_refresh =
                     this.api.prefix() + "item/refresh/post";
-                this.api.forward_(command, name_item_refresh,
+                this.api.forward_(request_type, name_item_refresh,
                                   request_info, request,
                                   timeout, priority,
                                   trans_id, pid);
                 return null;
             case JSONItemListRequest.message_name_valid:
-                return this.itemList(command, name, pattern,
+                return this.itemList(request_type, name, pattern,
                                      request_info, request,
                                      timeout, priority,
                                      trans_id, pid);
             case JSONLanguageListRequest.message_name_valid:
-                return this.languageList(command, name, pattern,
+                return this.languageList(request_type, name, pattern,
                                          request_info, request,
                                          timeout, priority,
                                          trans_id, pid);
             case JSONSubjectListRequest.message_name_valid:
-                return this.subjectList(command, name, pattern,
+                return this.subjectList(request_type, name, pattern,
                                         request_info, request,
                                         timeout, priority,
                                         trans_id, pid);
@@ -535,12 +535,12 @@ public class Service implements Runnable
                 // timeout already occurred, null response
                 return ("").getBytes();
             case JSONRecommendationListRequest.message_name_valid:
-                return this.recommendationList(command, name, pattern,
+                return this.recommendationList(request_type, name, pattern,
                                                request_info, request,
                                                timeout, priority,
                                                trans_id, pid);
             case JSONRecommendationUpdateRequest.message_name_valid:
-                return this.recommendationUpdate(command, name, pattern,
+                return this.recommendationUpdate(request_type, name, pattern,
                                                  request_info, request,
                                                  timeout, priority,
                                                  trans_id, pid);
