@@ -22,12 +22,15 @@ public class Main
 
     public static void main(String[] args_in)
     {
+        Arguments args_out = new Arguments();
+        JCommander.newBuilder()
+                  .addObject(args_out)
+                  .build()
+                  .parse(args_in);
+        Main.arguments_parsed = args_out;
+
         try
         {
-            Arguments args_out = new Arguments();
-            new JCommander(args_out, args_in);
-            Main.arguments_parsed = args_out;
-
             final int thread_count = API.thread_count();
             if (thread_count < 2)
             {
