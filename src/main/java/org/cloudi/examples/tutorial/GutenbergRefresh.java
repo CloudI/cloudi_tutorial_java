@@ -44,8 +44,8 @@ public class GutenbergRefresh implements Runnable
         this.executable_download = executable_download;
         this.executable_cleanup = executable_cleanup;
         this.directory = directory;
-        this.subjects = new HashSet();
-        this.languages = new HashSet();
+        this.subjects = new HashSet<String>();
+        this.languages = new HashSet<String>();
         this.cleared = false;
         this.failure = null;
     }
