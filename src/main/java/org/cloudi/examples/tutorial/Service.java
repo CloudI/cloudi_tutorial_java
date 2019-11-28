@@ -139,7 +139,7 @@ public class Service implements Runnable
 
             Main.info(this, "initialization end");
             // accept service requests
-            while (this.api.poll(ServiceIdle.INTERVAL) == Boolean.TRUE)
+            while (this.api.poll(ServiceIdle.INTERVAL))
             {
                 // execute ServiceIdle function objects
                 this.idle.check();
