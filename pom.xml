@@ -123,7 +123,7 @@
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
-      <version>9.4.1212.jre7</version>
+      <version>9.3-1104-jdbc4</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
