@@ -1,5 +1,6 @@
 //-*-Mode:java;coding:utf-8;tab-width:4;c-basic-offset:4;indent-tabs-mode:()-*-
 // ex: set ft=java fenc=utf-8 sts=4 ts=4 sw=4 et nomod:
+
 package org.cloudi.examples.tutorial;
 
 import java.util.concurrent.Executors;
@@ -7,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.sql.Connection;
+import javax.sql.DataSource;
 import com.ericsson.otp.erlang.OtpErlangPid;
 import org.cloudi.API;
 
@@ -18,7 +19,7 @@ public class Service implements Runnable
     private final int thread_index;
     private API api;
     private final ServiceIdle idle;
-    private static LenskitData lenskit_instance;
+    private static RecommendData recommend_instance;
 
     public Service(final int thread_index)
     {
@@ -47,44 +48,41 @@ public class Service implements Runnable
         this.idle = new ServiceIdle(this.api);
     }
 
-    public static LenskitData lenskit()
+    public static RecommendData recommend()
     {
-        final LenskitData lenskit = Service.lenskit_instance;
-        if (lenskit == null)
+        final RecommendData recommend = Service.recommend_instance;
+        if (recommend == null)
         {
-            return Service.lenskit(false);
+            return Service.recommend(false);
         }
         else
         {
-            return lenskit;
+            return recommend;
         }
     }
 
-    public synchronized static LenskitData lenskit(final boolean refresh)
+    public synchronized static RecommendData recommend(final boolean refresh)
     {
-        LenskitData lenskit = Service.lenskit_instance;
-        if (lenskit == null || refresh)
+        RecommendData recommend = Service.recommend_instance;
+        if (recommend == null || refresh)
         {
-            final Connection db = Database.pgsql(Main.arguments());
-            if (db == null)
-                return null;
+            DataSource db_data;
+            if (recommend == null)
+                db_data = Database.pgsql(Main.arguments());
+            else
+                db_data = recommend.dataSource();
             try
             {
-                lenskit = new LenskitData(db);
-                Service.lenskit_instance = lenskit;
+                recommend = new RecommendData(db_data);
+                Service.recommend_instance = recommend;
             }
             catch (Exception e)
             {
                 e.printStackTrace(Main.err);
-                Database.close(db);
                 return null;
             }
-            finally
-            {
-                Database.close(db);
-            }
         }
-        return lenskit;
+        return recommend;
     }
 
     public void run()
@@ -94,9 +92,9 @@ public class Service implements Runnable
             Main.info(this, "initialization begin");
             // initialization timeout is enforced
             // based on the service configuration value
-            if (Service.lenskit() == null)
+            if (Service.recommend() == null)
             {
-                throw new RuntimeException("Lenskit initialization failed");
+                throw new RuntimeException("Recommender initialization failed");
             }
 
             // subscribe to different CloudI service name patterns
@@ -157,6 +155,11 @@ public class Service implements Runnable
         // termination timeout is enforced based on MaxT/MaxR
         // (or the timeout_terminate service configuration option)
         this.item_refresh_executor.shutdownNow();
+        if (this.thread_index == 0 &&
+            Service.recommend_instance != null)
+        {
+            Service.recommend_instance.shutdown();
+        }
         Main.info(this, "termination end");
     }
 
@@ -191,17 +194,17 @@ public class Service implements Runnable
                                           "gutenberg_refresh_cleanup";
         final String directory = System.getProperty("java.io.tmpdir") + D +
                                  (new API.TransId(trans_id)).toString();
-        final Connection db = Database.pgsql(Main.arguments());
-        if (db == null)
+        final RecommendData recommend = Service.recommend();
+        if (recommend == null)
         {
-            return JSONItemRefreshResponse
-                .failure("db")
+            return JSONItemListResponse
+                .failure("recommend")
                 .toString().getBytes();
         }
         // item_refresh takes a long time, so it is done asynchronously
         this.item_refresh_pending = this.item_refresh_executor.submit(
             new GutenbergRefresh(this.idle,
-                                 db,
+                                 recommend.dataSource(),
                                  executable_download,
                                  executable_cleanup,
                                  directory));
@@ -223,32 +226,20 @@ public class Service implements Runnable
                 .failure("json")
                 .toString().getBytes();
         }
-        final Connection db = Database.pgsql(Main.arguments());
-        if (db == null)
+        final RecommendData recommend = Service.recommend();
+        if (recommend == null)
         {
             return JSONItemListResponse
-                .failure("db",
-                         request_json.getUserId(),
-                         request_json.getLanguage(),
-                         request_json.getSubject())
-                .toString().getBytes();
-        }
-        final LenskitData lenskit = Service.lenskit();
-        if (lenskit == null)
-        {
-            return JSONItemListResponse
-                .failure("lenskit",
+                .failure("recommend",
                          request_json.getUserId(),
                          request_json.getLanguage(),
                          request_json.getSubject())
                 .toString().getBytes();
         }
         final JSONResponse response_json =
-            lenskit.itemList(db,
-                             request_json.getUserId(),
-                             request_json.getLanguage(),
-                             request_json.getSubject());
-        Database.close(db);
+            recommend.itemList(request_json.getUserId(),
+                                     request_json.getLanguage(),
+                                     request_json.getSubject());
         return response_json.toString().getBytes();
     }
 
@@ -267,22 +258,14 @@ public class Service implements Runnable
                 .failure("json")
                 .toString().getBytes();
         }
-        final Connection db = Database.pgsql(Main.arguments());
-        if (db == null)
+        final RecommendData recommend = Service.recommend();
+        if (recommend == null)
         {
             return JSONLanguageListResponse
-                .failure("db")
+                .failure("recommend")
                 .toString().getBytes();
         }
-        final LenskitData lenskit = Service.lenskit();
-        if (lenskit == null)
-        {
-            return JSONLanguageListResponse
-                .failure("lenskit")
-                .toString().getBytes();
-        }
-        final JSONResponse response_json = lenskit.languageList(db);
-        Database.close(db);
+        final JSONResponse response_json = recommend.languageList();
         return response_json.toString().getBytes();
     }
 
@@ -301,22 +284,14 @@ public class Service implements Runnable
                 .failure("json")
                 .toString().getBytes();
         }
-        final Connection db = Database.pgsql(Main.arguments());
-        if (db == null)
+        final RecommendData recommend = Service.recommend();
+        if (recommend == null)
         {
             return JSONSubjectListResponse
-                .failure("db")
+                .failure("recommend")
                 .toString().getBytes();
         }
-        final LenskitData lenskit = Service.lenskit();
-        if (lenskit == null)
-        {
-            return JSONSubjectListResponse
-                .failure("lenskit")
-                .toString().getBytes();
-        }
-        final JSONResponse response_json = lenskit.subjectList(db);
-        Database.close(db);
+        final JSONResponse response_json = recommend.subjectList();
         return response_json.toString().getBytes();
     }
 
@@ -326,7 +301,7 @@ public class Service implements Runnable
                                         Byte priority, byte[] trans_id,
                                         OtpErlangPid pid)
     {
-        // update the model used to generate recommendations
+        // update the model used to generate recommend
         // (new ratings won't be used until this occurs)
         final JSONRecommendationRefreshRequest request_json =
             JSONRecommendationRefreshRequest.fromString(new String(request));
@@ -336,11 +311,12 @@ public class Service implements Runnable
                 .failure("json")
                 .toString().getBytes();
         }
-        final LenskitData lenskit = Service.lenskit(true);
-        if (lenskit == null)
+        final RecommendData recommend =
+            Service.recommend(true);
+        if (recommend == null)
         {
             return JSONRecommendationRefreshResponse
-                .failure("lenskit")
+                .failure("recommend")
                 .toString().getBytes();
         }
         return JSONRecommendationRefreshResponse
@@ -354,7 +330,7 @@ public class Service implements Runnable
                                        OtpErlangPid pid)
     {
         // rate a single user_id/item_id and
-        // generate a new list of recommendations with rating predictions
+        // generate a new list of recommend with rating predictions
         final JSONRecommendationUpdateRequest request_json =
             JSONRecommendationUpdateRequest.fromString(new String(request));
         if (request_json == null)
@@ -363,28 +339,18 @@ public class Service implements Runnable
                 .failure("json")
                 .toString().getBytes();
         }
-        final Connection db = Database.pgsql(Main.arguments());
-        if (db == null)
+        final RecommendData recommend = Service.recommend();
+        if (recommend == null)
         {
             return JSONRecommendationUpdateResponse
-                .failure("db",
-                         request_json.getUserId())
-                .toString().getBytes();
-        }
-        final LenskitData lenskit = Service.lenskit();
-        if (lenskit == null)
-        {
-            return JSONRecommendationUpdateResponse
-                .failure("lenskit",
+                .failure("recommend",
                          request_json.getUserId())
                 .toString().getBytes();
         }
         final JSONResponse response_json =
-            lenskit.recommendationUpdate(db,
-                                         request_json.getUserId(),
-                                         request_json.getItemId(),
-                                         request_json.getRating());
-        Database.close(db);
+            recommend.recommendationUpdate(request_json.getUserId(),
+                                                 request_json.getItemId(),
+                                                 request_json.getRating());
         return response_json.toString().getBytes();
     }
 
@@ -394,7 +360,7 @@ public class Service implements Runnable
                                      Byte priority, byte[] trans_id,
                                      OtpErlangPid pid)
     {
-        // generate a list of recommendations with rating predictions
+        // generate a list of recommend with rating predictions
         final JSONRecommendationListRequest request_json =
             JSONRecommendationListRequest.fromString(new String(request));
         if (request_json == null)
@@ -403,26 +369,16 @@ public class Service implements Runnable
                 .failure("json")
                 .toString().getBytes();
         }
-        final Connection db = Database.pgsql(Main.arguments());
-        if (db == null)
+        final RecommendData recommend = Service.recommend();
+        if (recommend == null)
         {
             return JSONRecommendationListResponse
-                .failure("db",
-                         request_json.getUserId())
-                .toString().getBytes();
-        }
-        final LenskitData lenskit = Service.lenskit();
-        if (lenskit == null)
-        {
-            return JSONRecommendationListResponse
-                .failure("lenskit",
+                .failure("recommend",
                          request_json.getUserId())
                 .toString().getBytes();
         }
         final JSONResponse response_json =
-            lenskit.recommendationList(db,
-                                       request_json.getUserId());
-        Database.close(db);
+            recommend.recommendationList(request_json.getUserId());
         return response_json.toString().getBytes();
     }
 
@@ -472,7 +428,7 @@ public class Service implements Runnable
                                         timeout, priority,
                                         trans_id, pid);
             case JSONRecommendationRefreshRequest.message_name_valid:
-                // all OS processes need to refresh their lenskit data
+                // all OS processes need to refresh their recommendation data
                 final String name_recommendation_refresh =
                     this.api.prefix() + "recommendation/refresh/post";
                 final String name_websockets =
@@ -550,5 +506,4 @@ public class Service implements Runnable
                     .toString().getBytes();
         }
     }
-
 }

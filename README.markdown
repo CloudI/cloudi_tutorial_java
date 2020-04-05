@@ -11,12 +11,12 @@ the electronic books available at
 While the source code is meant to show information related to Java development
 with the Java CloudI API, additional source code dependencies are used:
 
-* [Erlang/OTP jinterface Library](http://erlang.org/doc/apps/jinterface/jinterface_users_guide.html) for CloudI API usage of the Erlang Binary Term Format
+* [Apache Log4j](https://logging.apache.org/log4j/) to allow Apache Mahout to use the CloudI log file through stdout/stderr (which keeps all the service log output in the `cloudi.log` file)
+* [Apache Commons DBCP](http://commons.apache.org/dbcp/) for the Apache Mahout database connection pool
+* [Apache Mahout](https://mahout.apache.org/) for the recommendations in Java
 * [Gson](https://github.com/google/gson) for JSON serialization in Java
 * [Jcommander](http://jcommander.org/) for command-line parsing in Java of CloudI service configuration arguments
-* [Lenskit](http://lenskit.org/) for the recommendations in Java
-* [PostgreSQL JDBC Driver](http://search.maven.org/#artifactdetails|org.postgresql|postgresql|9.3-1104-jdbc4|jar) for Java database usage along with [PostgreSQL](https://www.postgresql.org/) and Lenskit
-* [Simple Logging Facade for Java (SLF4J)](http://www.slf4j.org/) to allow Lenskit to use the CloudI log file through stderr (which keeps all the service log output in the `cloudi.log` file)
+* [PostgreSQL Driver](https://search.maven.org/artifact/org.postgresql/postgresql/9.4.1212.jre7/bundle) for Java database usage along with [PostgreSQL](https://www.postgresql.org/) and Apache Mahout
 
 BUILD
 -----

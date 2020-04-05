@@ -10,76 +10,68 @@ import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import org.grouplens.lenskit.ItemScorer;
-import org.grouplens.lenskit.ItemRecommender;
-import org.grouplens.lenskit.RatingPredictor;
-import org.grouplens.lenskit.RecommenderBuildException;
-import org.grouplens.lenskit.core.LenskitConfiguration;
-import org.grouplens.lenskit.core.LenskitRecommender;
-import org.grouplens.lenskit.core.LenskitRecommenderEngine;
-import org.grouplens.lenskit.core.ModelDisposition;
-import org.grouplens.lenskit.core.RecommenderConfigurationException;
-import org.grouplens.lenskit.data.sql.JDBCRatingDAO;
-import org.grouplens.lenskit.data.sql.JDBCRatingDAOBuilder;
-import org.grouplens.lenskit.knn.MinNeighbors;
-import org.grouplens.lenskit.knn.NeighborhoodSize;
-import org.grouplens.lenskit.knn.item.ItemItemScorer;
-import org.grouplens.lenskit.knn.item.ModelSize;
-import org.grouplens.lenskit.knn.item.ItemSimilarity;
-import org.grouplens.lenskit.knn.item.ItemSimilarityThreshold;
-import org.grouplens.lenskit.data.pref.PreferenceDomain;
-import org.grouplens.lenskit.scored.ScoredId;
-import org.grouplens.lenskit.vectors.similarity.CosineVectorSimilarity;
-import org.grouplens.lenskit.vectors.similarity.VectorSimilarity;
-import org.grouplens.lenskit.vectors.similarity.SimilarityDamping;
-import org.grouplens.lenskit.baseline.BaselineScorer;
-import org.grouplens.lenskit.baseline.UserMeanBaseline;
-import org.grouplens.lenskit.baseline.ItemMeanRatingItemScorer;
-import org.grouplens.lenskit.baseline.UserMeanItemScorer;
-import org.grouplens.lenskit.transform.threshold.AbsoluteThreshold;
-import org.grouplens.lenskit.transform.threshold.ThresholdValue;
-import org.grouplens.lenskit.transform.normalize.UserVectorNormalizer;
-import org.grouplens.lenskit.transform.normalize.BaselineSubtractingUserVectorNormalizer;
+import javax.sql.DataSource;
+import org.apache.mahout.common.MemoryUtil;
+import org.apache.mahout.cf.taste.common.NoSuchUserException;
+import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.impl.eval.LoadEvaluator;
+import org.apache.mahout.cf.taste.impl.model.jdbc.ReloadFromJDBCDataModel;
+import org.apache.mahout.cf.taste.impl.recommender.CachingRecommender;
+import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
+import org.apache.mahout.cf.taste.impl.similarity.CachingItemSimilarity;
+import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
+import org.apache.mahout.cf.taste.recommender.RecommendedItem;
+import org.apache.mahout.cf.taste.recommender.Recommender;
+import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 
-public class LenskitData
+public class RecommendData
 {
     public static final double RATING_MIN = 0.5;
     public static final double RATING_MAX = 5.0;
     public static final double RATING_STEP = 0.5;
 
-    private final LenskitRecommenderEngine engine;
+    private final DataSource db_data;
+    private final Recommender recommender;
 
-    public LenskitData(Connection db)
-        throws RecommenderBuildException
+    public RecommendData(final DataSource db_data)
+        throws TasteException
     {
-        // based on http://lenskit.org/documentation/basics/data-access/
-        LenskitConfiguration config = LenskitData.configuration();
-        JDBCRatingDAO dao = LenskitData.ratingsDAO(db);
-        LenskitConfiguration data_config = new LenskitConfiguration();
-        data_config.addComponent(dao);
-        this.engine =
-            LenskitRecommenderEngine.newBuilder()
-                                    .addConfiguration(config)
-                                    .addConfiguration(data_config,
-                                                      ModelDisposition.EXCLUDED)
-                                    .build();
+        // a basic item-based recommender (Collaborative Filtering)
+        final ReloadFromJDBCDataModel model =
+            new ReloadFromJDBCDataModel(Database.dataModel(db_data));
+        final ItemSimilarity similarity = new CachingItemSimilarity(
+            new PearsonCorrelationSimilarity(model), model);
+        this.db_data = db_data;
+        this.recommender = new CachingRecommender(
+            new GenericItemBasedRecommender(model, similarity));
+        LoadEvaluator.runLoad(this.recommender);
     }
 
-    private final LenskitRecommender recommenderSession(final Connection db)
-        throws RecommenderConfigurationException
+    public final DataSource dataSource()
     {
-        // based on http://lenskit.org/documentation/basics/data-access/
-        JDBCRatingDAO dao = LenskitData.ratingsDAO(db);
-        LenskitConfiguration data_config = new LenskitConfiguration();
-        data_config.addComponent(dao);
-        return this.engine.createRecommender(data_config);
+        return this.db_data;
     }
 
-    public final JSONResponse itemList(final Connection db,
-                                       final long user_id,
+    public void shutdown()
+    {
+        MemoryUtil.stopMemoryLogger();
+        try
+        {
+            Thread.sleep(1000);
+        }
+        catch (InterruptedException e)
+        {
+        }
+        // Apache Mahout has thread pools that do not stop
+        // (stuck on LinkedBlockingQueue)
+        System.exit(1);
+    }
+
+    public final JSONResponse itemList(final long user_id,
                                        final String language,
                                        final String subject)
     {
+        Connection db = null;
         PreparedStatement select = null;
         ResultSet select_result = null;
         boolean db_failure = false;
@@ -87,6 +79,7 @@ public class LenskitData
         try
         {
             // select all items with the user's ratings
+            db = Database.connection(this.db_data);
             String subject_query;
             if (subject != null)
             {
@@ -165,6 +158,7 @@ public class LenskitData
         {
             Database.close(select_result);
             Database.close(select);
+            Database.close(db);
         }
         if (db_failure)
         {
@@ -178,8 +172,9 @@ public class LenskitData
         }
     }
 
-    public final JSONResponse languageList(final Connection db)
+    public final JSONResponse languageList()
     {
+        Connection db = null;
         Statement select = null;
         ResultSet select_result = null;
         boolean db_failure = false;
@@ -187,6 +182,7 @@ public class LenskitData
         try
         {
             // select all items with the user's ratings
+            db = Database.connection(this.db_data);
             select = db.createStatement();
             select_result = select.executeQuery(
                 "SELECT language " +
@@ -213,6 +209,7 @@ public class LenskitData
         {
             Database.close(select_result);
             Database.close(select);
+            Database.close(db);
         }
         if (db_failure)
         {
@@ -224,8 +221,9 @@ public class LenskitData
         }
     }
 
-    public final JSONResponse subjectList(final Connection db)
+    public final JSONResponse subjectList()
     {
+        Connection db = null;
         Statement select = null;
         ResultSet select_result = null;
         boolean db_failure = false;
@@ -233,6 +231,7 @@ public class LenskitData
         try
         {
             // select all items with the user's ratings
+            db = Database.connection(this.db_data);
             select = db.createStatement();
             select_result = select.executeQuery(
                 "SELECT subject " +
@@ -259,6 +258,7 @@ public class LenskitData
         {
             Database.close(select_result);
             Database.close(select);
+            Database.close(db);
         }
         if (db_failure)
         {
@@ -270,17 +270,18 @@ public class LenskitData
         }
     }
 
-    public final JSONResponse recommendationUpdate(final Connection db,
-                                                   final long user_id,
+    public final JSONResponse recommendationUpdate(final long user_id,
                                                    final long item_id,
                                                    final double rating)
     {
+        Connection db = null;
         PreparedStatement upsert = null;
         ResultSet upsert_result = null;
         boolean db_failure = false;
         try
         {
             // update ratings table
+            db = Database.connection(this.db_data);
             upsert = db.prepareStatement("SELECT rate(?, ?, ?)");
             upsert.setLong(1, user_id);
             upsert.setLong(2, item_id);
@@ -304,16 +305,18 @@ public class LenskitData
         {
             Database.close(upsert_result);
             Database.close(upsert);
+            Database.close(db);
         }
         if (db_failure)
         {
             return JSONRecommendationUpdateResponse.failure("db", user_id);
         }
         // get recommendations
-        List<JSONRecommendation> output = this.recommend(db, user_id);
+        List<JSONRecommendation> output = this.recommend(user_id);
         if (output == null)
         {
-            return JSONRecommendationUpdateResponse.failure("lenskit", user_id);
+            return JSONRecommendationUpdateResponse.failure("recommender",
+                                                            user_id);
         }
         else
         {
@@ -321,13 +324,13 @@ public class LenskitData
         }
     }
 
-    public final JSONResponse recommendationList(final Connection db,
-                                                 final long user_id)
+    public final JSONResponse recommendationList(final long user_id)
     {
-        List<JSONRecommendation> output = this.recommend(db, user_id);
+        List<JSONRecommendation> output = this.recommend(user_id);
         if (output == null)
         {
-            return JSONRecommendationListResponse.failure("lenskit", user_id);
+            return JSONRecommendationListResponse.failure("recommender",
+                                                          user_id);
         }
         else
         {
@@ -335,20 +338,19 @@ public class LenskitData
         }
     }
 
-    private final List<JSONRecommendation> recommend(final Connection db,
-                                                     final long user_id)
+    private final List<JSONRecommendation> recommend(final long user_id)
     {
+        Connection db = null;
         PreparedStatement select = null;
         ResultSet select_result = null;
-        boolean lenskit_failure = false;
+        boolean recommender_failure = false;
         LinkedList<JSONRecommendation> output =
             new LinkedList<JSONRecommendation>();
         try
         {
-            // based on http://lenskit.org/documentation/basics/getting-started/
-            final LenskitRecommender session = this.recommenderSession(db);
-            final ItemRecommender items = session.getItemRecommender();
-            List<ScoredId> recommendations = items.recommend(user_id, 10);
+            db = Database.connection(this.db_data);
+            List<RecommendedItem> recommendations =
+                this.recommender.recommend(user_id, 10);
             StringBuffer query = new StringBuffer();
             query.append(
                 "SELECT items.id AS item_id, " +
@@ -364,10 +366,10 @@ public class LenskitData
                 "(SELECT * FROM ratings WHERE user_id = ?) AS ratings " +
                 "ON items.id = ratings.item_id " +
                 "WHERE false ");
-            for (ScoredId recommendation : recommendations)
+            for (RecommendedItem recommendation : recommendations)
             {
                 query.append("OR items.id = '");
-                query.append(Long.toString(recommendation.getId()));
+                query.append(Long.toString(recommendation.getItemID()));
                 query.append("' ");
             }
             query.append(
@@ -375,8 +377,6 @@ public class LenskitData
             select = db.prepareStatement(query.toString());
             select.setLong(1, user_id);
             select_result = select.executeQuery();
-            RatingPredictor recommendations_rating =
-                session.getRatingPredictor();
             while (select_result.next())
             {
                 final long item_id =
@@ -400,10 +400,10 @@ public class LenskitData
                 final Double rating = (Double)
                     select_result.getObject("rating");
                 double rating_expected =
-                    recommendations_rating.predict(user_id, item_id);
+                    this.recommender.estimatePreference(user_id, item_id);
                 rating_expected = Math.round(rating_expected /
-                                             LenskitData.RATING_STEP) *
-                                  LenskitData.RATING_STEP;
+                                             RecommendData.RATING_STEP) *
+                                  RecommendData.RATING_STEP;
                 output.addLast(new JSONRecommendation(item_id,
                                                       creator,
                                                       creator_link,
@@ -416,22 +416,26 @@ public class LenskitData
                                                       rating_expected));
             }
         }
+        catch (NoSuchUserException e)
+        {
+        }
         catch (SQLException e)
         {
             Database.printSQLException(e, Main.err);
-            lenskit_failure = true;
+            recommender_failure = true;
         }
         catch (Exception e)
         {
             e.printStackTrace(Main.err);
-            lenskit_failure = true;
+            recommender_failure = true;
         }
         finally
         {
             Database.close(select_result);
             Database.close(select);
+            Database.close(db);
         }
-        if (lenskit_failure)
+        if (recommender_failure)
         {
             return null;
         }
@@ -440,62 +444,5 @@ public class LenskitData
             return output;
         }
     }
-
-    private static LenskitConfiguration configuration()
-    {
-        // based on http://lenskit.org/documentation/basics/getting-started/
-        LenskitConfiguration config = new LenskitConfiguration();
-
-        // a basic item-item kNN recommender with baseline
-
-        // Use item-item CF to score items
-        // (see http://lenskit.org/documentation/algorithms/item-item/)
-        config.bind(ItemScorer.class)
-              .to(ItemItemScorer.class);
-        // use personalized mean rating as the baseline/fallback predictor.
-        // 2-step process:
-        // First, use the user mean rating as the baseline scorer
-        config.bind(BaselineScorer.class, ItemScorer.class)
-              .to(UserMeanItemScorer.class);
-        // Second, use the item mean rating as the base for user means
-        config.bind(UserMeanBaseline.class, ItemScorer.class)
-              .to(ItemMeanRatingItemScorer.class);
-        // and normalize ratings by baseline prior to computing similarities
-        config.bind(UserVectorNormalizer.class)
-              .to(BaselineSubtractingUserVectorNormalizer.class);
-
-        // rating predictor (not ItemScorer) will clamp the rating output
-        // to be within [0.5 .. 5] with granularity 0.5
-        // (the default is to not clamp)
-        config.bind(PreferenceDomain.class)
-              .to(new PreferenceDomain(LenskitData.RATING_MIN,
-                                       LenskitData.RATING_MAX,
-                                       LenskitData.RATING_STEP));
-        // explicit default configuration values
-        config.set(NeighborhoodSize.class).to(20);     // default
-        config.set(MinNeighbors.class).to(1);          // default
-        config.set(ModelSize.class) // value = 4000 commonly used
-              .to(0);                                  // default
-
-        config.set(SimilarityDamping.class).to(0.0);   // default
-        config.set(ThresholdValue.class).to(0.0);      // default
-        config.within(ItemSimilarity.class)
-              .bind(VectorSimilarity.class)
-              .to(CosineVectorSimilarity.class);       // default
-        return config;
-    }
-
-    private static JDBCRatingDAO ratingsDAO(Connection db)
-    {
-        JDBCRatingDAOBuilder builder = JDBCRatingDAO.newBuilder();
-        // based on org.grouplens.lenskit.data.sql.BasicSQLStatementFactory
-        builder.setTableName("ratings");                // default
-        builder.setUserColumn("user_id");               // was "user"
-        builder.setItemColumn("item_id");               // was "item"
-        builder.setRatingColumn("rating");              // default
-        builder.setTimestampColumn("timestamp");        // default
-        return builder.build(db);
-    }
-
 }
 

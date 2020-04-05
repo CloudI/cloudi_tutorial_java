@@ -1,5 +1,6 @@
 //-*-Mode:java;coding:utf-8;tab-width:4;c-basic-offset:4;indent-tabs-mode:()-*-
 // ex: set ft=java fenc=utf-8 sts=4 ts=4 sw=4 et nomod:
+
 package org.cloudi.examples.tutorial;
 
 import java.io.File;
@@ -17,6 +18,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.SAXException;
@@ -34,13 +36,13 @@ public class GutenbergRefresh implements Runnable
     private SQLException failure;
 
     public GutenbergRefresh(ServiceIdle idle,
-                            Connection db,
+                            DataSource db_data,
                             String executable_download,
                             String executable_cleanup,
                             String directory)
     {
         this.idle = idle;
-        this.db = db;
+        this.db = Database.connection(db_data);
         this.executable_download = executable_download;
         this.executable_cleanup = executable_cleanup;
         this.directory = directory;

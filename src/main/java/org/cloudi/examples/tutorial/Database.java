@@ -7,35 +7,56 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.DriverManager;
 import java.sql.Array;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.io.PrintStream;
 import java.util.List;
+import javax.sql.DataSource;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.apache.mahout.cf.taste.impl.model.jdbc.ConnectionPoolDataSource;
+import org.apache.mahout.cf.taste.impl.model.jdbc.PostgreSQLJDBCDataModel;
+import org.apache.mahout.cf.taste.model.JDBCDataModel;
 
 public class Database
 {
-    public static Connection pgsql(final Arguments arguments)
+    public static DataSource pgsql(final Arguments arguments)
+    {
+        PGSimpleDataSource db_data = new PGSimpleDataSource();
+        db_data.setServerName(arguments.getPGSQLHostname());
+        db_data.setPortNumber(arguments.getPGSQLPort());
+        db_data.setDatabaseName(arguments.getPGSQLDatabase());
+        db_data.setUser(arguments.getPGSQLUsername());
+        db_data.setPassword(arguments.getPGSQLPassword());
+        return new ConnectionPoolDataSource(db_data);
+    }
+
+    public static JDBCDataModel dataModel(final DataSource db_data)
+    {
+        final String preferenceTable = "ratings";
+        final String columnUserID = "user_id";
+        final String columnItemID = "item_id";
+        final String columnPreference = "rating";
+        final String columnTimestamp = "timestamp";
+        return new PostgreSQLJDBCDataModel(db_data,
+                                           preferenceTable,
+                                           columnUserID,
+                                           columnItemID,
+                                           columnPreference,
+                                           columnTimestamp);
+    }
+
+    public static Connection connection(final DataSource db_data)
     {
         try
         {
-            Class.forName("org.postgresql.Driver");
-            Connection db =
-                DriverManager.getConnection(arguments.getPGSQLURL(),
-                                            arguments.getPGSQLUsername(),
-                                            arguments.getPGSQLPassword());
+            final Connection db = db_data.getConnection();
             db.setAutoCommit(false);
             return db;
         }
         catch (SQLException e)
         {
             Database.printSQLException(e, Main.err);
-            return null;
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace(Main.err);
             return null;
         }
     }

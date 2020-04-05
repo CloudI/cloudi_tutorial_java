@@ -22,12 +22,19 @@ public class Arguments
     @Parameter(names = "-pgsql_password", description = "PostgreSQL password")
     private String pgsql_password = "cloudi_tutorial_java";
 
-    public String getPGSQLURL()
+    public String getPGSQLHostname()
     {
-        return "jdbc:postgresql://" +
-               this.pgsql_hostname + ":" +
-               this.pgsql_port + "/" +
-               this.pgsql_database;
+        return this.pgsql_hostname;
+    }
+
+    public int getPGSQLPort()
+    {
+        return this.pgsql_port;
+    }
+
+    public String getPGSQLDatabase()
+    {
+        return this.pgsql_database;
     }
 
     public String getPGSQLUsername()
