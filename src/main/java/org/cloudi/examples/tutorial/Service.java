@@ -19,7 +19,7 @@ public class Service implements Runnable
     private final int thread_index;
     private API api;
     private final ServiceIdle idle;
-    private static RecommendData recommend_instance;
+    private static volatile RecommendData recommend_instance;
 
     public Service(final int thread_index)
     {
