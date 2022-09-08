@@ -167,7 +167,7 @@ public class Service implements Runnable
                               String pattern, byte[] request_info,
                               byte[] request, Integer timeout,
                               Byte priority, byte[] trans_id,
-                              OtpErlangPid pid)
+                              OtpErlangPid source)
     {
         // refresh all item data asynchronously
         final JSONItemRefreshRequest request_json =
@@ -215,7 +215,7 @@ public class Service implements Runnable
                            String pattern, byte[] request_info,
                            byte[] request, Integer timeout,
                            Byte priority, byte[] trans_id,
-                           OtpErlangPid pid)
+                           OtpErlangPid source)
     {
         // generate a list of items with the user's ratings
         final JSONItemListRequest request_json =
@@ -247,7 +247,7 @@ public class Service implements Runnable
                                String pattern, byte[] request_info,
                                byte[] request, Integer timeout,
                                Byte priority, byte[] trans_id,
-                               OtpErlangPid pid)
+                               OtpErlangPid source)
     {
         // generate a list of all the languages which have items available
         final JSONLanguageListRequest request_json =
@@ -273,7 +273,7 @@ public class Service implements Runnable
                               String pattern, byte[] request_info,
                               byte[] request, Integer timeout,
                               Byte priority, byte[] trans_id,
-                              OtpErlangPid pid)
+                              OtpErlangPid source)
     {
         // generate a list of all the subjects which have items available
         final JSONSubjectListRequest request_json =
@@ -299,7 +299,7 @@ public class Service implements Runnable
                                         String pattern, byte[] request_info,
                                         byte[] request, Integer timeout,
                                         Byte priority, byte[] trans_id,
-                                        OtpErlangPid pid)
+                                        OtpErlangPid source)
     {
         // update the model used to generate recommend
         // (new ratings won't be used until this occurs)
@@ -327,7 +327,7 @@ public class Service implements Runnable
                                        String pattern, byte[] request_info,
                                        byte[] request, Integer timeout,
                                        Byte priority, byte[] trans_id,
-                                       OtpErlangPid pid)
+                                       OtpErlangPid source)
     {
         // rate a single user_id/item_id and
         // generate a new list of recommend with rating predictions
@@ -358,7 +358,7 @@ public class Service implements Runnable
                                      String pattern, byte[] request_info,
                                      byte[] request, Integer timeout,
                                      Byte priority, byte[] trans_id,
-                                     OtpErlangPid pid)
+                                     OtpErlangPid source)
     {
         // generate a list of recommend with rating predictions
         final JSONRecommendationListRequest request_json =
@@ -385,7 +385,7 @@ public class Service implements Runnable
     public Object client(Integer request_type, String name, String pattern,
                          byte[] request_info, byte[] request,
                          Integer timeout, Byte priority, byte[] trans_id,
-                         OtpErlangPid pid)
+                         OtpErlangPid source)
         throws API.ForwardAsyncException,
                API.ForwardSyncException,
                API.InvalidInputException,
@@ -410,23 +410,23 @@ public class Service implements Runnable
                 this.api.forward_(request_type, name_item_refresh,
                                   request_info, request,
                                   timeout, priority,
-                                  trans_id, pid);
+                                  trans_id, source);
                 return null;
             case JSONItemListRequest.message_name_valid:
                 return this.itemList(request_type, name, pattern,
                                      request_info, request,
                                      timeout, priority,
-                                     trans_id, pid);
+                                     trans_id, source);
             case JSONLanguageListRequest.message_name_valid:
                 return this.languageList(request_type, name, pattern,
                                          request_info, request,
                                          timeout, priority,
-                                         trans_id, pid);
+                                         trans_id, source);
             case JSONSubjectListRequest.message_name_valid:
                 return this.subjectList(request_type, name, pattern,
                                         request_info, request,
                                         timeout, priority,
-                                        trans_id, pid);
+                                        trans_id, source);
             case JSONRecommendationRefreshRequest.message_name_valid:
                 // all OS processes need to refresh their recommendation data
                 final String name_recommendation_refresh =
@@ -494,12 +494,12 @@ public class Service implements Runnable
                 return this.recommendationList(request_type, name, pattern,
                                                request_info, request,
                                                timeout, priority,
-                                               trans_id, pid);
+                                               trans_id, source);
             case JSONRecommendationUpdateRequest.message_name_valid:
                 return this.recommendationUpdate(request_type, name, pattern,
                                                  request_info, request,
                                                  timeout, priority,
-                                                 trans_id, pid);
+                                                 trans_id, source);
             default:
                 return JSONResponse
                     .failure("message_name")
