@@ -1,7 +1,7 @@
 [CloudI](https://cloudi.org) Java Tutorial
 =========================================
 
-[![Build Status](https://travis-ci.org/CloudI/cloudi_tutorial_java.png)](https://travis-ci.org/CloudI/cloudi_tutorial_java)
+[![Build Status](https://app.travis-ci.com/CloudI/cloudi_tutorial_java.svg?branch=master)](https://app.travis-ci.com/CloudI/cloudi_tutorial_java)
 
 This repository contains the example source code for the tutorial at
 [https://cloudi.org/tutorial_java.html](https://cloudi.org/tutorial_java.html).  The source code provides local real-time recommendations for
